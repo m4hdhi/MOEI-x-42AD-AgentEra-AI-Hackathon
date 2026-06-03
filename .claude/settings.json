@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3)",
+      "Bash(curl -s -i -o /dev/null -w \"  HTTP %{http_code}\\\\n\" http://127.0.0.1:8000/auth/uaepass/login)",
+      "Bash(curl -s -i http://127.0.0.1:8000/auth/uaepass/login)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('  service=', d.get\\('service'\\)\\); print\\('  cid=', d.get\\('correlation_id'\\)\\); print\\('  reply[:200]:', d.get\\('text',''\\)[:200]\\)\")",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" -c /tmp/cj http://localhost:8000/auth/uaepass/login -o /tmp/mock-login.html)",
+      "Bash(/usr/bin/curl -s -m 8 \"http://127.0.0.1:8000/recordings?limit=5\")",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('count:',d['count']\\);[print\\(' -',i['call_id'],i['service'],i['qa_score'],i['case_number']\\) for i in d['items']]\")",
+      "Bash(/usr/bin/curl -s -m 8 -o /dev/null -w \"audio HTTP %{http_code}, type=%{content_type}\\\\n\" \"http://127.0.0.1:8000/recordings/34347daa-dc76-4f60-9e24-97f35db975ec/audio\")",
+      "Bash(/usr/bin/curl -s -m 8 \"http://127.0.0.1:8000/recordings/stats\")",
+      "Bash(pnpm build *)",
+      "Bash(echo \"BUILD EXIT: $?\")",
+      "Bash(/usr/bin/curl -s -m 8 http://localhost:3000__TRACKED_VAR__)",
+      "Bash(python3 -c ' *)",
+      "Bash(/usr/bin/curl -s -m 8 \"http://127.0.0.1:8000/recordings?limit=10\")",
+      "Bash(python3 -c \"import sys,json;[print\\(i['id']\\) for i in json.load\\(sys.stdin\\)['items'] if i['service']=='energy']\")"
+    ]
+  }
+}

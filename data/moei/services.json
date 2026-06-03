@@ -1,0 +1,296 @@
+{
+  "_meta": {
+    "source": "Scraped from moei.gov.ae public pages (Playwright). PDPL-safe. Re-run scripts/scrape_moei.py to refresh.",
+    "version": "scraped-2026-05-24",
+    "agent_name": "Hassan",
+    "contact_centre": "800 6634",
+    "tawasul_complaint": "171 (UAE Government complaints platform)",
+    "uae_pass_required": true
+  },
+  "services": [
+    {
+      "id": "szhp-reschedule",
+      "service": "housing",
+      "title": "Sheikh Zayed Housing Programme — Reschedule a Housing Loan",
+      "title_ar": "إعادة جدولة قرض الإسكان — برنامج الشيخ زايد للإسكان",
+      "audience": "UAE nationals with an active SZHP loan",
+      "summary": "Citizens facing genuine financial hardship can apply to extend the term of their housing loan. Hassan triages eligibility via the rules engine and prepares the offer letter for e-signature.",
+      "required_documents": [
+        "Emirates ID",
+        "Latest 3 months' salary slips",
+        "Bank statement",
+        "Active loan statement"
+      ],
+      "channels": [
+        "WhatsApp",
+        "Voice (800 6634)",
+        "Web",
+        "Branch"
+      ],
+      "sla_days": 3,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/sheikh-zayed-housing-program"
+    },
+    {
+      "id": "e-services-help",
+      "service": "general",
+      "title": "E-Services Help",
+      "title_ar": "",
+      "audience": "All UAE residents",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Web"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/eservices-help"
+    },
+    {
+      "id": "issuing-field-visit-permit",
+      "service": "general",
+      "title": "Issuing field visit permit",
+      "title_ar": "",
+      "audience": "Individuals: UAE National, resident, All types of society",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Ministry of Energy & Infrastructure WebsiteMinistry of Energy & Infra(MOEI)Customer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaCustomer Happiness Center - Dubai"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/issuing-field-visit-permit"
+    },
+    {
+      "id": "purchase-of-geological-and-geophysical-studies-and-maps",
+      "service": "infrastructure",
+      "title": "Purchase of geological and geophysical studies and maps",
+      "title_ar": "",
+      "audience": "Individuals: UAE National, resident, Senior UAE National /Seniors, Special Needs",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Ministry of Energy & Infrastructure WebsiteMinistry of Energy & Infra(MOEI)Customer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaCustomer Happiness Center - Dubai"
+      ],
+      "sla_days": 0,
+      "fees_aed": 3000,
+      "url": "https://www.moei.gov.ae/en/services/purchase-of-geological-and-geophysical-studies-and-maps"
+    },
+    {
+      "id": "housing-assistance-request",
+      "service": "housing",
+      "title": "Housing Assistance Request",
+      "title_ar": "",
+      "audience": "Citizens",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "MOEI website: 24/7Smart app: 24/7Happiness Service Centers: According to the service center working hours (Dubai",
+        "Ras Al Khaimah",
+        "Fujairah)"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/housing-assistance-request"
+    },
+    {
+      "id": "reconsideration-for-housing-assistance-decision",
+      "service": "housing",
+      "title": "Reconsideration for Housing Assistance Decision",
+      "title_ar": "",
+      "audience": "Individuals: UAE National, Senior UAE National, Special NeedsWomen (widow, divorced, parentless, interpretation of married to an expatriate, Parentage unknown)",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Ministry of Energy & Infra(MOEI)Ministry of Energy & Infrastructure WebsiteCustomer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaCustomer Happiness Center - DubaiService delivery window - Ajman"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/reconsideration-for-housing-assistance-decision-request"
+    },
+    {
+      "id": "value-estimate-of-accident-damages",
+      "service": "general",
+      "title": "Value Estimate of Accident Damages",
+      "title_ar": "",
+      "audience": "Individuals (Citizens, Residents, Senior Citizen, People of Determination and Visitors)",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Ministry of Energy & Infra(MOEI)Ministry of Energy & Infrastructure WebsiteCustomer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaCustomer Happiness Center - Dubai"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/value-estimate-of-accident-damages"
+    },
+    {
+      "id": "issuing-non-objection-certificate",
+      "service": "general",
+      "title": "Issuing Non-Objection Certificate",
+      "title_ar": "",
+      "audience": "Individuals: UAE National, resident, Senior UAE National /Seniors, Special Needs",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Ministry of Energy & Infra(MOEI)Ministry of Energy & Infrastructure WebsiteCustomer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaCustomer Happiness Center - Dubai"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/issuing-non-objection-certificate"
+    },
+    {
+      "id": "issuing-a-national-transportation-vehicle-permit",
+      "service": "transport",
+      "title": "Issuing a national transportation vehicle permit",
+      "title_ar": "",
+      "audience": "Business: Companies",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Ministry of Energy & Infrastructure WebsiteMinistry of Energy & Infra(MOEI)Customer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaCustomer Happiness Center - Dubai"
+      ],
+      "sla_days": 0,
+      "fees_aed": 100,
+      "url": "https://www.moei.gov.ae/en/services/issuing-a-national-transportation-vehicle-permit"
+    },
+    {
+      "id": "renewal-of-a-national-transportation-vehicle-permit",
+      "service": "transport",
+      "title": "Renewal of a national transportation vehicle permit",
+      "title_ar": "",
+      "audience": "Business: Companies",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Ministry of Energy & Infrastructure WebsiteMinistry of Energy & Infra(MOEI)Customer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaCustomer Happiness Center - Dubai"
+      ],
+      "sla_days": 0,
+      "fees_aed": 100,
+      "url": "https://www.moei.gov.ae/en/services/renewal-of-a-national-transportation-vehicle-permit"
+    },
+    {
+      "id": "renewal-of-navigation-license-for-commercial-ship",
+      "service": "maritime",
+      "title": "Renewal of navigation license for commercial ship",
+      "title_ar": "",
+      "audience": "Government: Local Authorities, Federal GovernmentsIndividuals: UAE National, resident, Senior UAE National /Seniors, Special NeedsBusiness: Companies",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "MOEI website: 24/7Smart app: 24/7Happiness Service Centers: According to the service center working hours (Dubai",
+        "Ras Al Khaimah",
+        "Fujairah)"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/renewal-of-navigation-license-for-commercial-ship"
+    },
+    {
+      "id": "renewal-of-pleasure-boat-registration",
+      "service": "maritime",
+      "title": "Renewal of pleasure boat registration",
+      "title_ar": "",
+      "audience": "Individuals (UAE National, Resident, Senior UAE National /Seniors, Special Needs)",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Ministry of Energy & Infra(MOEI)Ministry of Energy & Infrastructure WebsiteCustomer Happiness Center - DubaiCustomer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaService delivery window - AlhamriyahService delivery window - AjmanCustomer Happiness Center- Al Mina"
+      ],
+      "sla_days": 0,
+      "fees_aed": 2,
+      "url": "https://www.moei.gov.ae/en/services/renewal-of-pleasure-boat-registration"
+    },
+    {
+      "id": "approval-of-import-hazardous-and-restricted-petroleum-materials",
+      "service": "maritime",
+      "title": "Approval of import hazardous and restricted petroleum materials",
+      "title_ar": "",
+      "audience": "None",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Ministry of Energy & Infrastructure WebsiteMinistry of Energy & Infra(MOEI)Customer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaCustomer Happiness Center - Dubai"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/approval-of-import-hazardous-and-restricted-petroleum-materials"
+    },
+    {
+      "id": "registration-in-the-petroleum-products-trading-record",
+      "service": "energy",
+      "title": "Registration in the petroleum products trading record",
+      "title_ar": "",
+      "audience": "Business: Companies",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Ministry of Energy & Infrastructure WebsiteMinistry of Energy & Infra(MOEI)Customer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaCustomer Happiness Center - Dubai"
+      ],
+      "sla_days": 0,
+      "fees_aed": 500,
+      "url": "https://www.moei.gov.ae/en/services/registration-in-the-petroleum-products-trading-register"
+    },
+    {
+      "id": "submit-a-complaint",
+      "service": "general",
+      "title": "Submit a complaint",
+      "title_ar": "",
+      "audience": "Individuals: UAE National, resident, Senior UAE National /Seniors, Special Needs",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Customer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaService delivery window - AlhamriyahService delivery window - AjmanCustomer Happiness Center- Al MinaCustomer Happiness Center - DubaiMinistry of Energy & Infrastrucutre Call CenterMinistry of Energy & Infrastructure WebsiteMinistry of Energy & Infra(MOEI)"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/provide-inquiries-suggestions-and-observations"
+    },
+    {
+      "id": "submit-an-inquiry",
+      "service": "general",
+      "title": "Submit an inquiry",
+      "title_ar": "",
+      "audience": "Individuals: UAE National, resident, Senior UAE National /Seniors, Special Needs",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Customer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaService delivery window - AlhamriyahService delivery window - AjmanCustomer Happiness Center- Al MinaCustomer Happiness Center - DubaiMinistry of Energy & Infrastrucutre Call CenterMinistry of Energy & Infra(MOEI)Ministry of Energy & Infrastructure Website"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/submit-an-inquiry-43b054bd"
+    },
+    {
+      "id": "submit-a-suggestion",
+      "service": "general",
+      "title": "Submit a suggestion",
+      "title_ar": "",
+      "audience": "Individuals: UAE National, resident, Senior UAE National /Seniors, Special Needs",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Customer Happiness Center - FujairahCustomer Happiness Center - RAS Al KhaimaService delivery window - AlhamriyahService delivery window - AjmanCustomer Happiness Center- Al MinaCustomer Happiness Center - DubaiMinistry of Energy & Infrastrucutre Call CenterMinistry of Energy & Infrastructure WebsiteMinistry of Energy & Infra(MOEI)"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/submit-a-suggestion-57899f96"
+    },
+    {
+      "id": "customer-service",
+      "service": "general",
+      "title": "Customer Service",
+      "title_ar": "",
+      "audience": "All UAE residents",
+      "summary": "",
+      "required_documents": [],
+      "channels": [
+        "Happiness Service Centers: According to the service center working hoursHappiness Service Centers: According to the service center working hours (Dubai",
+        "Ras Al Khaimah",
+        "Fujairah)Website: 24/7Smart App: 24/7Customer Happiness Center- Al MinaService delivery window - AlhamriyahService delivery window - RAK"
+      ],
+      "sla_days": 0,
+      "fees_aed": 0,
+      "url": "https://www.moei.gov.ae/en/services/customer-service"
+    }
+  ]
+}

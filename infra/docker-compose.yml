@@ -1,0 +1,69 @@
+name: hassan
+
+# One-command local stack: Postgres + Redis + Qdrant + Langfuse (self-hosted).
+# Bring up:    docker compose -f infra/docker-compose.yml up -d
+# Tear down:   docker compose -f infra/docker-compose.yml down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hassan-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hassan}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hassan_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-hassan}
+    ports:
+      - "5432:5432"
+    volumes:
+      - hassan_pg:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: hassan-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - hassan_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # qdrant: disabled — we'll re-enable when the knowledge layer needs embeddings.
+  # The MOEI catalog uses in-process keyword search (~14 services); doesn't need vectors.
+  # Re-add to bring back: `docker compose -f infra/docker-compose.yml --profile vector up qdrant`
+
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: hassan-langfuse
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hassan}:${POSTGRES_PASSWORD:-hassan_dev}@postgres:5432/langfuse
+      NEXTAUTH_URL: http://localhost:3001
+      NEXTAUTH_SECRET: dev-only-change-me-32chars-xxxxxxx
+      SALT: dev-salt-change-me
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_INIT_ORG_ID: hassan
+      LANGFUSE_INIT_PROJECT_ID: hassan-demo
+      LANGFUSE_INIT_USER_EMAIL: dev@hassan.local
+      LANGFUSE_INIT_USER_PASSWORD: hassan_dev_password
+
+volumes:
+  hassan_pg:
+  hassan_redis:
+  hassan_qdrant:

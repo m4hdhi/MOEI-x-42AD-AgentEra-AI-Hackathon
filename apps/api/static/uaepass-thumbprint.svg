@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Black thumbprint base -->
+  <g stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" fill="none">
+    <!-- Outer top arc -->
+    <path d="M52 50 Q100 28 148 50"/>
+    <!-- Sides -->
+    <path d="M40 78 Q40 60 52 50"/>
+    <path d="M160 78 Q160 60 148 50"/>
+    <!-- Thumbprint ridges (concentric arcs) -->
+    <path d="M58 70 Q100 50 142 70"/>
+    <path d="M50 88 Q100 64 150 88"/>
+    <path d="M46 104 Q100 78 154 104"/>
+    <path d="M44 120 Q100 92 156 120"/>
+    <path d="M44 136 Q100 108 156 136"/>
+    <path d="M48 152 Q100 126 152 152"/>
+    <!-- Lower swirl -->
+    <path d="M70 165 Q100 145 130 165"/>
+    <path d="M80 175 Q100 168 120 175"/>
+    <!-- Dots around the print (the speckling in the original) -->
+  </g>
+  <g fill="#1a1a1a">
+    <circle cx="35" cy="60" r="1.8"/>
+    <circle cx="165" cy="60" r="1.8"/>
+    <circle cx="30" cy="100" r="1.8"/>
+    <circle cx="170" cy="100" r="1.8"/>
+    <circle cx="35" cy="140" r="1.8"/>
+    <circle cx="165" cy="140" r="1.8"/>
+    <circle cx="45" cy="175" r="1.8"/>
+    <circle cx="155" cy="175" r="1.8"/>
+    <circle cx="100" cy="40" r="1.8"/>
+  </g>
+  <!-- UAE green swoosh inside (signature element) -->
+  <path d="M85 95 Q100 115 115 100"
+        stroke="#00843D" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <!-- UAE red dot at the bottom of swoosh -->
+  <circle cx="98" cy="155" r="3.5" fill="#E4002B"/>
+  <path d="M95 152 Q100 148 105 152" stroke="#E4002B" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+</svg>

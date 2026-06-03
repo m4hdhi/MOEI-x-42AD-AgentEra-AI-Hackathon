@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+.next/
+out/
+.turbo/
+dist/
+build/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+*.pem
+*.key
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Data / models / caches
+data/raw/
+data/processed/
+data/models/
+*.gguf
+*.bin
+*.safetensors
+
+# Docker volumes
+infra/.volumes/
+
+# Langfuse / logs
+*.log
+logs/
+
+# Hackathon scratch
+scratch/
+.notes/
+
+# Generated call recordings (binary audio blobs)
+recordings/
+apps/api/recordings/
+
+# UAE PASS developer toolkit (downloaded SDK reference + staging creds — not app code)
+uaepass/
+
+# Stray root-level docs/images (not app code)
+Claude.pdf
+*.avif
