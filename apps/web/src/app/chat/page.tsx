@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Sparkles, FileText, User, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { API_URL } from "@/lib/utils";
 import { LoginGate } from "@/components/LoginGate";
+import { DocumentUpload } from "@/components/DocumentUpload";
 import type { UaePassSession } from "@/lib/auth";
 
 type Msg = {
@@ -18,6 +19,7 @@ type Msg = {
   nextBestAction?: string;
   suggestedReplies?: string[];
   citations?: { title: string; url: string; source?: string }[];
+  escalationRisk?: { risk: number; band: string; factors: string[]; model: string };
   correlationId?: string;
   streaming?: boolean;
 };
@@ -212,6 +214,7 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
                     nextBestAction: evt.next_best_action,
                     suggestedReplies: evt.suggested_replies ?? [],
                     citations: evt.citations ?? [],
+                    escalationRisk: evt.escalation_risk ?? undefined,
                     correlationId: evt.correlation_id,
                     streaming: false,
                   };
@@ -250,6 +253,7 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
             escalated: data.escalated,
             suggestedReplies: data.suggested_replies ?? [],
             citations: data.citations ?? [],
+            escalationRisk: data.escalation_risk ?? undefined,
             correlationId: data.correlation_id,
             streaming: false,
           };
@@ -423,6 +427,8 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
               </ul>
             </div>
 
+            <DocumentUpload />
+
             <div className="rounded-2xl border border-moei-bronze/40 bg-moei-cream/50 p-5 text-xs text-moei-body">
               <div className="flex items-center gap-2 font-semibold text-moei-ink">
                 <FileText size={14} /> Need to speak to a person?
@@ -502,6 +508,13 @@ function Bubble({ m, onPickReply, adminMode }: { m: Msg; onPickReply: (r: string
               />
             )}
             {m.escalated && <Chip label="ESCALATED → co-pilot" alert />}
+            {m.escalationRisk && m.escalationRisk.risk !== undefined && (
+              <Chip
+                label={`risk: ${(m.escalationRisk.risk * 100).toFixed(0)}% ${m.escalationRisk.band}`}
+                alert={m.escalationRisk.band === "high"}
+                accent={m.escalationRisk.band === "medium"}
+              />
+            )}
             {m.correlationId && (
               <a
                 href={`/admin/audit?cid=${m.correlationId}`}

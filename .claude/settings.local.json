@@ -84,7 +84,17 @@
       "Bash(curl -sSL -A Mozilla/5.0 --cookie-jar /tmp/cj3 'https://qa-id.uaepass.ae/trustedx-authserver/oauth/main-as?redirect_uri=https%3A%2F%2Fexample.com%2Fcallback&client_id=sandbox_stage&response_type=code&state=abc123&scope=urn%3Auae%3Adigitalid%3Aprofile%3Ageneral&acr_values=urn%3Asafelayer%3Atws%3Apolicies%3Aauthentication%3Alevel%3Alow&ui_locales=en' --max-time 15 -o /tmp/t3a.html -w '  example.com: final URL: %{url_effective}\\\\n')",
       "Bash(curl -sSL -A Mozilla/5.0 --cookie-jar /tmp/cj4 'https://qa-id.uaepass.ae/trustedx-authserver/oauth/main-as?redirect_uri=https%3A%2F%2Fhan-ringleted-dubitatively.ngrok-free.dev%2Fauth%2Fuaepass%2Fcallback&client_id=sandbox_stage&response_type=code&state=abc123&scope=urn%3Auae%3Adigitalid%3Aprofile%3Ageneral&acr_values=urn%3Asafelayer%3Atws%3Apolicies%3Aauthentication%3Alevel%3Alow&ui_locales=en' --max-time 15 -o /tmp/t3b.html -w '  ngrok: final URL: %{url_effective}\\\\n')",
       "Bash(curl -sSI -A Mozilla/5.0 'https://qa-id.uaepass.ae/trustedx-authserver/oauth/main-as?redirect_uri=https%3A%2F%2Fhan-ringleted-dubitatively.ngrok-free.dev%2Fauth%2Fuaepass%2Fcallback&client_id=sandbox_stage&response_type=code&state=abc&scope=urn%3Auae%3Adigitalid%3Aprofile%3Ageneral&acr_values=urn%3Asafelayer%3Atws%3Apolicies%3Aauthentication%3Alevel%3Alow&ui_locales=en' --max-time 10)",
-      "Bash(curl -sSL -A Mozilla/5.0 -D /tmp/headers 'https://qa-id.uaepass.ae/trustedx-authserver/oauth/main-as?redirect_uri=https%3A%2F%2Fhan-ringleted-dubitatively.ngrok-free.dev%2Fauth%2Fuaepass%2Fcallback&client_id=sandbox_stage&response_type=code&state=abc&scope=urn%3Auae%3Adigitalid%3Aprofile%3Ageneral&acr_values=urn%3Asafelayer%3Atws%3Apolicies%3Aauthentication%3Alevel%3Alow&ui_locales=en' --max-time 10 -o /dev/null)"
+      "Bash(curl -sSL -A Mozilla/5.0 -D /tmp/headers 'https://qa-id.uaepass.ae/trustedx-authserver/oauth/main-as?redirect_uri=https%3A%2F%2Fhan-ringleted-dubitatively.ngrok-free.dev%2Fauth%2Fuaepass%2Fcallback&client_id=sandbox_stage&response_type=code&state=abc&scope=urn%3Auae%3Adigitalid%3Aprofile%3Ageneral&acr_values=urn%3Asafelayer%3Atws%3Apolicies%3Aauthentication%3Alevel%3Alow&ui_locales=en' --max-time 10 -o /dev/null)",
+      "Bash(/usr/bin/curl -s -m 8 \"http://127.0.0.1:8000/analytics/escalation-risk?limit=4\")",
+      "Bash(/usr/bin/curl -s -m 8 -o /dev/null -w \"POST /documents/extract \\(no file\\) → %{http_code}\\\\n\" -X POST http://127.0.0.1:8000/documents/extract)",
+      "Bash(/usr/bin/curl -s -m 8 http://127.0.0.1:8000/openapi.json)",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('documents/extract' in str\\(d['paths']\\)\\)\")",
+      "Bash(xargs kill -9)",
+      "Bash(echo \"web pid=$!\")",
+      "Bash(/usr/bin/curl -s -m 8 -o /dev/null -w '__TRACKED_VAR__ → %{http_code}\\\\n' http://localhost:3000__TRACKED_VAR__)",
+      "Bash(/usr/bin/curl -s -m 8 -o /dev/null -w \"GET /crm/agent-network → %{http_code}\\\\n\" http://127.0.0.1:8000/crm/agent-network)",
+      "Bash(/usr/bin/curl -s -m 8 -o /dev/null -w \"POST /analytics/advisor → %{http_code}\\\\n\" -X POST http://127.0.0.1:8000/analytics/advisor -H \"Content-Type: application/json\" -d '{\"question\":\"test\"}')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('digital twin:',json.dumps\\(d.get\\('twin'\\)\\)\\)\")"
     ],
     "additionalDirectories": [
       "/Users/mahdhimuzammil/Downloads/AgentEra/agents/.hassan_tmp",

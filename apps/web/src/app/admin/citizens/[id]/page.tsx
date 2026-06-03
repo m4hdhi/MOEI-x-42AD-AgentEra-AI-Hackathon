@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeft, ShieldCheck, Phone, Mail, Flag, BadgeCheck, MessageSquare, Mic, Globe,
   Smartphone, CheckCircle2, AlertTriangle, RotateCcw, Send, Clock, Star, FileText,
+  Sparkles, TrendingUp, TrendingDown, Minus, Compass,
 } from "lucide-react";
 import { API_URL } from "@/lib/utils";
 
@@ -17,9 +18,14 @@ type Case = {
 type Activity = { id: number; channel: string | null; event_type: string; summary: string; created_at: string };
 type Recording = { id: string; duration_seconds: number; summary: string | null; service: string | null; resolved: boolean | null; qa_score: number | null; case_number: string | null; created_at: string };
 type Feedback = { csat: number | null; ces: number | null; comment: string | null; case_number: string | null; submitted_at: string };
+type Twin = {
+  preferred_channel: string | null; frequent_services: string[]; satisfaction_trend: string;
+  predicted_next_need: string; life_event_signal: string | null; calls_recorded: number; avg_csat: number | null;
+};
 type Profile = {
   user_id: string; name: string | null; verified: boolean;
   profile: Record<string, any> | null;
+  twin: Twin;
   summary: {
     total_cases: number; open_cases: number; escalated_cases: number; resolved_cases: number;
     avg_sentiment: number | null; first_contact: string | null; last_contact: string | null; channels: string[];
@@ -181,6 +187,9 @@ export default function CitizenProfilePage() {
               tone={s.avg_sentiment !== null && s.avg_sentiment < 0.4 ? "warn" : "good"} />
             <Kpi label="Channels" value={String(s.channels.length)} sub={s.channels.join(", ")} />
           </div>
+
+          {/* Digital Twin */}
+          {data.twin && <DigitalTwin twin={data.twin} />}
         </div>
       </section>
 
@@ -290,6 +299,56 @@ export default function CitizenProfilePage() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function DigitalTwin({ twin }: { twin: Twin }) {
+  const TrendIcon = twin.satisfaction_trend === "improving" ? TrendingUp
+    : twin.satisfaction_trend === "declining" ? TrendingDown : Minus;
+  const trendColor = twin.satisfaction_trend === "improving" ? "text-emerald-600"
+    : twin.satisfaction_trend === "declining" ? "text-red-600" : "text-moei-muted";
+  return (
+    <div className="mt-4 rounded-xl border border-moei-bronze/40 bg-gradient-to-br from-moei-cream/50 to-white p-5">
+      <div className="flex items-center gap-2">
+        <Sparkles size={15} className="text-moei-bronze" />
+        <h3 className="text-sm font-bold text-moei-ink">Digital Twin</h3>
+        <span className="text-[11px] text-moei-muted">— a learning model of this citizen</span>
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <TwinCell label="Preferred channel" value={twin.preferred_channel || "—"} />
+        <TwinCell label="Frequent services" value={twin.frequent_services.length ? twin.frequent_services.join(", ") : "—"} />
+        <div className="rounded-lg border border-moei-line bg-white p-3">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-moei-muted">Satisfaction trend</div>
+          <div className={"mt-1 flex items-center gap-1 text-sm font-semibold capitalize " + trendColor}>
+            <TrendIcon size={14} /> {twin.satisfaction_trend}
+          </div>
+        </div>
+        <TwinCell label="Avg CSAT" value={twin.avg_csat !== null ? `${twin.avg_csat}/5` : "—"} />
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-lg border border-moei-bronze/30 bg-white p-3">
+          <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-moei-bronze">
+            <Compass size={11} /> Predicted next need
+          </div>
+          <p className="mt-1 text-sm text-moei-ink">{twin.predicted_next_need}</p>
+        </div>
+        {twin.life_event_signal && (
+          <div className="rounded-lg border border-moei-line bg-white p-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-moei-muted">Life-event signal</div>
+            <p className="mt-1 text-sm text-moei-ink">{twin.life_event_signal}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TwinCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-moei-line bg-white p-3">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-moei-muted">{label}</div>
+      <div className="mt-1 text-sm font-semibold capitalize text-moei-ink">{value}</div>
     </div>
   );
 }

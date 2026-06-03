@@ -16,6 +16,7 @@ from ..llm import LLMRole, get_llm_with_fallback
 from ..memory.episodic import get_episodic_memory
 from ..memory.short_term import get_short_term_buffer
 from ..workers import (
+    run_complaints_agent,
     run_energy_agent,
     run_general_agent,
     run_housing_agent,
@@ -104,6 +105,27 @@ def _format_citations_footer(citations: list[dict], language: str, channel: str)
     return f"{head} {body}"
 
 
+def _keyword_intent(text: str) -> str | None:
+    """Strong, unambiguous intent signals that should override service-based routing.
+
+    Returns an intent only when confident; otherwise None (let the LLM/heuristics decide).
+    Ensures complaints always reach the Complaints Agent regardless of which service it's about.
+    """
+    tl = text.lower()
+    if any(k in tl for k in ("complaint", "unacceptable", "horrible", "terrible", "disappointed",
+                              "ridiculous", "furious", "angry", "useless", "worst", "no one replies",
+                              "nobody replies", "still waiting", "fed up")) \
+       or any(k in text for k in ("شكوى", "غير مقبول", "سيئ", "غاضب", "محبط")):
+        return "complaint"
+    if any(k in tl for k in ("thank", "appreciate", "excellent", "great service", "well done")) \
+       or any(k in text for k in ("شكرا", "ممتاز", "أحسنتم")):
+        return "appreciation"
+    if any(k in tl for k in ("i suggest", "you should", "why don't you", "i recommend", "it would be better")) \
+       or "اقترح" in text:
+        return "suggestion"
+    return None
+
+
 def _keyword_router(text: str) -> tuple[Service, float, str]:
     """Cheap deterministic prior. Scans for service-specific keywords. Most confident wins.
 
@@ -144,6 +166,18 @@ async def router_node(state: SupervisorState) -> dict:
     # Always compute the keyword prior — used both as backstop and as context to the LLM.
     kw_service, kw_conf, kw_reason = _keyword_router(text)
     detected_lang = _detect_language(text) if hinted_lang == "auto" else hinted_lang
+
+    # Strong intent signals (complaint/appreciation/suggestion) override service routing so
+    # grievances always reach the Complaints Agent, even with no service keyword.
+    forced_intent = _keyword_intent(text)
+    if forced_intent:
+        logger.info(f"router(intent-override): intent={forced_intent} service={kw_service} lang={detected_lang}")
+        return {
+            "intent": forced_intent,
+            "service": kw_service,
+            "language": detected_lang,
+            "confidence": max(kw_conf, 0.85),
+        }
 
     # Fast-path on ALL channels when keyword router is confident.
     # Skipping the LLM Router saves ~10s per turn. The keyword router covers all 5 MOEI domains.
@@ -266,7 +300,8 @@ async def dispatcher_node(state: SupervisorState) -> dict:
 
     if intent == "escalate_to_human":
         draft = "Connecting you with a human agent now. They'll have your full context."
-        return {"worker_draft": draft, "tool_calls": [{"tool": "escalate", "args": {"reason": "explicit_request"}}]}
+        return {"worker_draft": draft, "tool_calls": [{"tool": "escalate", "args": {"reason": "explicit_request"}}],
+                "handled_by": "Escalation Agent"}
 
     memory = state.get("memory_snippets", [])
 
@@ -278,6 +313,13 @@ async def dispatcher_node(state: SupervisorState) -> dict:
         knowledge_hits = kb_search(text, lang=language, top_k=3)
     except Exception as e:
         logger.debug(f"knowledge: skipped ({e})")
+
+    # Complaints go to the dedicated Complaints Agent (multi-agent ecosystem), regardless of service.
+    if intent == "complaint":
+        result_c = await run_complaints_agent(text=text, language=language, memory_snippets=memory)
+        draft = result_c.draft_ar if language == "ar" else result_c.draft_en
+        return {"worker_draft": draft, "tool_calls": result_c.tool_calls,
+                "knowledge_hits": knowledge_hits, "handled_by": "Complaints Agent"}
 
     if service == "housing":
         # The HousingAgent's full rules-engine flow is meant for actual payment problems.
@@ -301,11 +343,13 @@ async def dispatcher_node(state: SupervisorState) -> dict:
                 "tool_calls": result_h.tool_calls,
                 "housing_decision": result_h.decision.as_dict() if result_h.decision else None,
                 "knowledge_hits": knowledge_hits,
+                "handled_by": "Housing Agent",
             }
         # Informational housing query → general worker with catalog grounding (fast path)
         result_g = await run_general_agent(text=text, language=language)
         draft = result_g.draft_ar if language == "ar" else result_g.draft_en
-        return {"worker_draft": draft, "tool_calls": result_g.tool_calls, "knowledge_hits": knowledge_hits}
+        return {"worker_draft": draft, "tool_calls": result_g.tool_calls, "knowledge_hits": knowledge_hits,
+                "handled_by": "Housing Agent"}
 
     # Domain-specific workers — all real responders grounded in the MOEI catalog
     worker_map = {
@@ -317,13 +361,15 @@ async def dispatcher_node(state: SupervisorState) -> dict:
     if service in worker_map:
         result = await worker_map[service](text=text, language=language, memory_snippets=memory)
         draft = result.draft_ar if language == "ar" else result.draft_en
-        return {"worker_draft": draft, "tool_calls": result.tool_calls, "knowledge_hits": knowledge_hits}
+        return {"worker_draft": draft, "tool_calls": result.tool_calls, "knowledge_hits": knowledge_hits,
+                "handled_by": f"{service.capitalize()} Agent"}
 
     # service == "unknown" or anything else → General MOEI worker handles it
     # (in-scope = answers from catalog; out-of-scope = polite refusal + redirect to MOEI topics)
     result_g = await run_general_agent(text=text, language=language, memory_snippets=memory)
     draft = result_g.draft_ar if language == "ar" else result_g.draft_en
-    return {"worker_draft": draft, "tool_calls": result_g.tool_calls, "knowledge_hits": knowledge_hits}
+    return {"worker_draft": draft, "tool_calls": result_g.tool_calls, "knowledge_hits": knowledge_hits,
+            "handled_by": "General Service Agent"}
 
 
 async def critic_node(state: SupervisorState) -> dict:
@@ -633,7 +679,18 @@ def next_best_action_node(state: SupervisorState) -> dict:
         nba = f"Share {service}-service web link, offer Customer Happiness Centre callback"
     else:
         nba = "Confirm citizen need, route to most-relevant MOEI service line"
-    return {"next_best_action": nba}
+
+    # Predictive Complaint Prevention: ML model scores how likely this turn ends escalated.
+    risk: dict = {}
+    try:
+        from ..workers.escalation_model import predict_escalation
+        risk = predict_escalation(
+            intent=intent, service=service, channel=state.get("channel", "web"),
+            sentiment=sentiment, msg_len=len(state.get("text", "")),
+        )
+    except Exception as e:
+        logger.debug(f"escalation risk skipped: {e}")
+    return {"next_best_action": nba, "escalation_risk": risk}
 
 
 async def persist_turn_node(state: SupervisorState) -> dict:
@@ -686,7 +743,8 @@ async def persist_turn_node(state: SupervisorState) -> dict:
                             "policy_blocked": state.get("policy_blocked", False),
                             "block_reason": state.get("block_reason")}),
             ("Knowledge", {"sources": [{"title": c.get("title"), "url": c.get("url")} for c in citations]}),
-            ("Worker", {"tool_calls": state.get("tool_calls", []),
+            ("Worker", {"handled_by": state.get("handled_by", "General Service Agent"),
+                        "tool_calls": state.get("tool_calls", []),
                         "housing_decision": state.get("housing_decision")}),
         ]
         if state.get("critic_score") is not None:

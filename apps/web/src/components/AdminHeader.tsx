@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Headphones, LayoutDashboard, ShieldCheck, ScrollText, ExternalLink, LogOut, ArrowLeft, PhoneCall, Users } from "lucide-react";
+import { Headphones, LayoutDashboard, ShieldCheck, ScrollText, ExternalLink, LogOut, ArrowLeft, PhoneCall, Users, Network } from "lucide-react";
 
 const ADMIN_NAV = [
   { href: "/admin/exec", label: "Executive Dashboard", icon: LayoutDashboard },
   { href: "/admin/citizens", label: "Citizens", icon: Users },
   { href: "/admin/copilot", label: "Agent Co-pilot", icon: Headphones },
   { href: "/admin/calls", label: "Call Recordings", icon: PhoneCall },
+  { href: "/admin/agents", label: "Agent Network", icon: Network },
   { href: "/admin/audit", label: "Audit Trail", icon: ShieldCheck },
   { href: "http://localhost:3001", label: "AI Traces", icon: ScrollText, external: true },
 ];

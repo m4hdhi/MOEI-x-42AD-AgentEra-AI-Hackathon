@@ -11,6 +11,52 @@ from ..core.db import db_cursor
 router = APIRouter(prefix="/crm", tags=["crm"])
 
 
+@router.get("/agent-network")
+def agent_network() -> dict:
+    """The multi-agent ecosystem: a master supervisor coordinating specialist agents.
+
+    Returns each specialist agent with how many cases it has handled, so the admin
+    'Agent Network' view can visualise the architecture (Idea #8 in the challenge guide).
+    """
+    roster = [
+        {"id": "housing", "name": "Housing Agent", "desc": "Sheikh Zayed Housing Programme — loans, rescheduling, hardship", "icon": "home"},
+        {"id": "energy", "name": "Energy Agent", "desc": "Electricity & water, tariffs, outages", "icon": "zap"},
+        {"id": "transport", "name": "Transport Agent", "desc": "Federal vehicle & driver services", "icon": "car"},
+        {"id": "maritime", "name": "Maritime Agent", "desc": "Vessels, ports, seafarer certificates", "icon": "anchor"},
+        {"id": "infrastructure", "name": "Infrastructure Agent", "desc": "Roads, public works, geological data", "icon": "construction"},
+        {"id": "complaints", "name": "Complaints Agent", "desc": "Grievance de-escalation & resolution", "icon": "alert"},
+    ]
+    counts: dict[str, int] = {}
+    try:
+        with db_cursor() as cur:
+            cur.execute("SELECT service, COUNT(*) AS n FROM cases GROUP BY service")
+            for r in cur.fetchall():
+                counts[(r["service"] or "unknown")] = int(r["n"])
+            cur.execute("SELECT COUNT(*) AS n FROM cases WHERE intent = 'complaint'")
+            counts["complaints"] = int((cur.fetchone() or {}).get("n") or 0)
+    except Exception:
+        pass
+
+    for a in roster:
+        a["handled"] = counts.get(a["id"], 0)
+
+    total = sum(counts.get(a["id"], 0) for a in roster)
+    return {
+        "master": {
+            "name": "MOEI Supervisor (Master Agent)",
+            "desc": "Routes every request, holds cross-channel memory, enforces guardrails, and coordinates the specialist agents.",
+            "pipeline": ["Router", "Sentiment", "Memory", "Guardrails", "Dispatcher", "Critic", "Escalation", "Composer", "Next-Best-Action", "Persist"],
+            "total_handled": total,
+        },
+        "agents": roster,
+        "support_agents": [
+            {"name": "Knowledge Agent", "desc": "RAG retrieval over services, policies, FAQs, crawled MOEI pages"},
+            {"name": "Post-Call Analyst", "desc": "Summarises calls, scores quality, detects sentiment trajectory"},
+            {"name": "Escalation Predictor", "desc": "ML model flagging complaint/escalation risk before it happens"},
+        ],
+    }
+
+
 def _serialize(row: dict) -> dict:
     out = dict(row)
     for k, v in out.items():
@@ -240,6 +286,69 @@ def list_citizens(
     return {"count": len(items), "citizens": items}
 
 
+def _digital_twin(cases: list, recordings: list, feedback: list) -> dict:
+    """A learning digital representation of the citizen (Challenge guide Idea #1/#6).
+
+    Derives preferred channel, frequent services, satisfaction trend, a predicted next need,
+    and a light life-event signal — all from the citizen's own history.
+    """
+    from collections import Counter
+
+    chan = Counter(c.get("channel") for c in cases if c.get("channel"))
+    svc = Counter(c.get("service") for c in cases if c.get("service") and c.get("service") != "unknown")
+    preferred_channel = chan.most_common(1)[0][0] if chan else None
+    top_services = [s for s, _ in svc.most_common(3)]
+
+    # Satisfaction trend: average sentiment of the most recent 5 cases vs the previous 5.
+    sents = [float(c["sentiment"]) for c in cases if c.get("sentiment") is not None]
+    trend = "stable"
+    if len(sents) >= 4:
+        recent = sum(sents[: len(sents) // 2]) / max(1, len(sents) // 2)
+        older = sum(sents[len(sents) // 2:]) / max(1, len(sents) - len(sents) // 2)
+        if recent - older > 0.08:
+            trend = "improving"
+        elif older - recent > 0.08:
+            trend = "declining"
+
+    open_cases = [c for c in cases if c.get("status") in ("open", "in_progress", "escalated")]
+    dominant = top_services[0] if top_services else None
+
+    # Predicted next need — simple, transparent heuristic over history.
+    if open_cases:
+        oc = open_cases[0]
+        predicted = f"Likely to follow up on {oc.get('service','their')} case {oc.get('case_number','')}"
+    elif dominant == "housing":
+        predicted = "May ask about Sheikh Zayed Housing Programme documents or instalment status"
+    elif dominant:
+        predicted = f"Likely to need another {dominant} service soon"
+    else:
+        predicted = "No active need predicted"
+
+    # Light life-event signal from frequent services.
+    life_event = None
+    if "housing" in top_services:
+        life_event = "Housing journey in progress (possible new home / family growth)"
+    elif "maritime" in top_services:
+        life_event = "Active vessel / maritime licence holder"
+    elif "transport" in top_services:
+        life_event = "Frequent transport-services user"
+
+    avg_csat = None
+    csats = [int(f["csat"]) for f in feedback if f.get("csat") is not None]
+    if csats:
+        avg_csat = round(sum(csats) / len(csats), 1)
+
+    return {
+        "preferred_channel": preferred_channel,
+        "frequent_services": top_services,
+        "satisfaction_trend": trend,
+        "predicted_next_need": predicted,
+        "life_event_signal": life_event,
+        "calls_recorded": len(recordings),
+        "avg_csat": avg_csat,
+    }
+
+
 @router.get("/citizens/{user_id}")
 def citizen_profile(user_id: str) -> dict:
     """Full 360° profile: master details + cases + activity timeline + call recordings + feedback."""
@@ -293,6 +402,8 @@ def citizen_profile(user_id: str) -> dict:
     if not profile and not cases and not activity:
         raise HTTPException(404, f"no record for {user_id}")
 
+    twin = _digital_twin(cases, recordings, feedback)
+
     name = None
     if profile:
         name = profile.get("full_name_en")
@@ -314,6 +425,7 @@ def citizen_profile(user_id: str) -> dict:
             "last_contact": agg["last_contact"].isoformat() if agg.get("last_contact") else None,
             "channels": [c for c in (agg.get("channels") or []) if c],
         },
+        "twin": twin,
         "cases": [_serialize(r) for r in cases],
         "activity": [_serialize(r) for r in activity],
         "recordings": [_serialize(r) for r in recordings],

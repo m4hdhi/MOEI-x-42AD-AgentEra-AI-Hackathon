@@ -48,6 +48,7 @@ async def chat_web(msg: IncomingMessage, request: Request) -> AgentResponse:
         suggested_replies=result.get("suggested_replies", []),
         citations=result.get("citations", []),
         case_number=result.get("case_number"),
+        escalation_risk=result.get("escalation_risk", {}),
     )
 
 
@@ -119,6 +120,7 @@ async def chat_web_stream(msg: IncomingMessage, request: Request) -> StreamingRe
             "next_best_action": result.get("next_best_action"),
             "suggested_replies": result.get("suggested_replies", []),
             "citations": result.get("citations", []),
+            "escalation_risk": result.get("escalation_risk", {}),
             "correlation_id": correlation_id,
         })
         yield _sse({"event": "done"})

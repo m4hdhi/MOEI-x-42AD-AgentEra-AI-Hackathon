@@ -33,4 +33,5 @@ class AgentResponse(BaseModel):
     suggested_replies: list[str] = Field(default_factory=list)
     citations: list[dict] = Field(default_factory=list)
     case_number: str | None = None
+    escalation_risk: dict = Field(default_factory=dict)
     correlation_id: str

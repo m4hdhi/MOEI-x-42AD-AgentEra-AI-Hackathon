@@ -15,7 +15,19 @@
       "Bash(/usr/bin/curl -s -m 8 http://localhost:3000__TRACKED_VAR__)",
       "Bash(python3 -c ' *)",
       "Bash(/usr/bin/curl -s -m 8 \"http://127.0.0.1:8000/recordings?limit=10\")",
-      "Bash(python3 -c \"import sys,json;[print\\(i['id']\\) for i in json.load\\(sys.stdin\\)['items'] if i['service']=='energy']\")"
+      "Bash(python3 -c \"import sys,json;[print\\(i['id']\\) for i in json.load\\(sys.stdin\\)['items'] if i['service']=='energy']\")",
+      "Bash(git add *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git push *)",
+      "Bash(git config *)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --env-filter ' *)",
+      "Bash(git stash *)",
+      "Bash(git update-ref *)",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('intent:',d.get\\('intent'\\)\\);print\\('reply:',d['text'][:160]\\)\")",
+      "Bash(/usr/bin/curl -s -m 8 \"http://127.0.0.1:8000/crm/agent-network\")",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('intent:',d.get\\('intent'\\),'| case:',d.get\\('case_number'\\)\\);print\\('reply:',d['text'][:150]\\)\")",
+      "Bash(uv add *)",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('intent:',d.get\\('intent'\\)\\);print\\('escalation_risk:',json.dumps\\(d.get\\('escalation_risk'\\)\\)\\)\")"
     ]
   }
 }

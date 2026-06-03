@@ -1,4 +1,5 @@
 from .domain import (
+    run_complaints_agent,
     run_energy_agent,
     run_infrastructure_agent,
     run_maritime_agent,
@@ -14,4 +15,5 @@ __all__ = [
     "run_transport_agent",
     "run_maritime_agent",
     "run_infrastructure_agent",
+    "run_complaints_agent",
 ]

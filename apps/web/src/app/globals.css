@@ -7,6 +7,33 @@ body[data-surface="admin"] > [data-citizen-chrome] {
   display: none !important;
 }
 
+/* Accessibility: larger-text / senior-friendly mode (set by AccessibilityToggle). */
+body[data-text="large"] {
+  font-size: 118%;
+  line-height: 1.7;
+}
+body[data-text="large"] button,
+body[data-text="large"] input,
+body[data-text="large"] textarea {
+  font-size: 1.02em;
+}
+
+/* Accessibility: high-contrast mode. Darkens text, strengthens borders. */
+body[data-contrast="high"] {
+  filter: contrast(1.15);
+}
+body[data-contrast="high"] .text-moei-muted,
+body[data-contrast="high"] .text-moei-body {
+  color: #1a1a1a !important;
+}
+body[data-contrast="high"] .border-moei-line {
+  border-color: #475569 !important;
+}
+body[data-contrast="high"] a,
+body[data-contrast="high"] .text-moei-bronze {
+  text-decoration-thickness: 2px;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

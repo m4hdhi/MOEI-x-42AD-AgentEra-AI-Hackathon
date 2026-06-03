@@ -9,10 +9,11 @@ Includes:
 
 from __future__ import annotations
 
+import json
 import math
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Body, Query
 
 from ..core.db import db_cursor
 
@@ -127,25 +128,39 @@ def escalation_risk(limit: int = Query(10, ge=1, le=50)) -> dict:
             (limit,),
         )
         rows = cur.fetchall()
-    return {
-        "items": [
-            {
-                "user_id": r["user_id"],
-                "user_name": r["user_name"] or "(unknown)",
-                "open_cases": int(r["open_cases"] or 0),
-                "high_priority": int(r["high_priority"] or 0),
-                "avg_sentiment": round(float(r["avg_sentiment"]), 2) if r["avg_sentiment"] is not None else None,
-                "last_touched": r["last_touched"].isoformat() if r["last_touched"] else None,
-                "risk_score": round(
-                    (int(r["high_priority"] or 0) * 3
-                     + int(r["open_cases"] or 0)
-                     + (1.0 - float(r["avg_sentiment"] or 0.5)) * 4),
-                    1,
-                ),
-            }
-            for r in rows
-        ]
-    }
+
+    # ML model: probability this citizen escalates, from their profile signals.
+    try:
+        from hassan.workers.escalation_model import predict_escalation
+    except Exception:
+        predict_escalation = None  # type: ignore
+
+    items = []
+    for r in rows:
+        avg_sent = float(r["avg_sentiment"]) if r["avg_sentiment"] is not None else 0.5
+        ml = {}
+        if predict_escalation is not None:
+            # Use the citizen's signal: complaint-leaning if they have high-priority open cases.
+            intent = "complaint" if int(r["high_priority"] or 0) > 0 else "service_request"
+            ml = predict_escalation(intent=intent, service="unknown", channel="web",
+                                    sentiment=avg_sent, msg_len=200)
+        items.append({
+            "user_id": r["user_id"],
+            "user_name": r["user_name"] or "(unknown)",
+            "open_cases": int(r["open_cases"] or 0),
+            "high_priority": int(r["high_priority"] or 0),
+            "avg_sentiment": round(avg_sent, 2) if r["avg_sentiment"] is not None else None,
+            "last_touched": r["last_touched"].isoformat() if r["last_touched"] else None,
+            "ml_risk": ml.get("risk"),
+            "ml_band": ml.get("band"),
+            "risk_score": round(
+                (int(r["high_priority"] or 0) * 3
+                 + int(r["open_cases"] or 0)
+                 + (1.0 - avg_sent) * 4),
+                1,
+            ),
+        })
+    return {"items": items}
 
 
 @router.get("/heatmap")
@@ -194,3 +209,114 @@ def heatmap() -> dict:
         "peak": peak,
         "model": "avg over last 28d, threshold 5 cases/agent/hr (configurable)",
     }
+
+
+# ============================ AI LEADERSHIP ADVISOR ============================
+# Leadership asks a question in plain language ("Why did satisfaction drop in housing
+# this week?"); we assemble the live operational snapshot and an LLM produces a
+# root-cause analysis with recommended actions. (Challenge guide Idea #4.)
+
+def _ops_snapshot() -> dict:
+    """Compact, structured picture of current operations for the advisor LLM."""
+    snap: dict = {}
+    try:
+        with db_cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) total,
+                       COUNT(*) FILTER (WHERE status='open') open,
+                       COUNT(*) FILTER (WHERE status='escalated') escalated,
+                       COUNT(*) FILTER (WHERE status='resolved') resolved,
+                       COUNT(*) FILTER (WHERE intent='complaint') complaints,
+                       ROUND(AVG(sentiment)::numeric,2) avg_sentiment
+                FROM cases WHERE created_at > NOW() - INTERVAL '7 days'
+            """)
+            snap["last_7_days"] = {k: (float(v) if isinstance(v, float) else int(v)) if v is not None else 0
+                                   for k, v in (cur.fetchone() or {}).items()}
+            cur.execute("""
+                SELECT service, COUNT(*) n, ROUND(AVG(sentiment)::numeric,2) sent
+                FROM cases WHERE created_at > NOW() - INTERVAL '7 days'
+                GROUP BY service ORDER BY n DESC
+            """)
+            snap["by_service"] = [{"service": r["service"], "cases": int(r["n"]),
+                                   "avg_sentiment": float(r["sent"]) if r["sent"] is not None else None}
+                                  for r in cur.fetchall()]
+            cur.execute("""
+                SELECT channel, COUNT(*) n FROM cases
+                WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY channel ORDER BY n DESC
+            """)
+            snap["by_channel"] = [{"channel": r["channel"], "cases": int(r["n"])} for r in cur.fetchall()]
+            # week-over-week sentiment
+            cur.execute("""
+                SELECT ROUND(AVG(sentiment) FILTER (WHERE created_at > NOW() - INTERVAL '7 days')::numeric,2) this_week,
+                       ROUND(AVG(sentiment) FILTER (WHERE created_at BETWEEN NOW() - INTERVAL '14 days' AND NOW() - INTERVAL '7 days')::numeric,2) last_week
+                FROM cases
+            """)
+            snap["sentiment_wow"] = {k: float(v) if v is not None else None for k, v in (cur.fetchone() or {}).items()}
+            cur.execute("""
+                SELECT ROUND(AVG(csat)::numeric,2) avg_csat, ROUND(AVG(ces)::numeric,2) avg_ces, COUNT(*) n
+                FROM case_feedback WHERE submitted_at > NOW() - INTERVAL '30 days'
+            """)
+            fb = cur.fetchone() or {}
+            snap["feedback_30d"] = {"avg_csat": float(fb["avg_csat"]) if fb.get("avg_csat") is not None else None,
+                                    "avg_ces": float(fb["avg_ces"]) if fb.get("avg_ces") is not None else None,
+                                    "responses": int(fb.get("n") or 0)}
+    except Exception as e:
+        snap["error"] = str(e)
+    return snap
+
+
+_ADVISOR_SYSTEM = (
+    "You are the MOEI AI Leadership Advisor, briefing a Ministry executive. You are given a "
+    "live operational snapshot (JSON) and a question. Answer ONLY from the data. Be concise, "
+    "specific, and decision-oriented. If the data doesn't support a claim, say so. "
+    "Return: a direct answer, the most likely root causes, and 2-4 concrete recommended actions."
+)
+
+
+@router.post("/advisor")
+async def leadership_advisor(payload: dict = Body(...)) -> dict:
+    """Natural-language operational Q&A for leadership, grounded in live metrics."""
+    question = (payload.get("question") or "").strip()
+    if not question:
+        return {"error": "question required"}
+    snapshot = _ops_snapshot()
+
+    try:
+        from hassan.llm import LLMRole, get_llm_with_fallback
+        from pydantic import BaseModel, Field
+
+        class AdvisorAnswer(BaseModel):
+            answer: str = Field(description="Direct 1-3 sentence answer to the question.")
+            root_causes: list[str] = Field(default_factory=list, description="Most likely drivers, from the data.")
+            recommended_actions: list[str] = Field(default_factory=list, description="2-4 concrete next steps.")
+
+        llm = get_llm_with_fallback(LLMRole.REASONER, temperature=0.2)
+        structured = llm.with_structured_output(AdvisorAnswer)
+        result: AdvisorAnswer = await structured.ainvoke([
+            ("system", _ADVISOR_SYSTEM),
+            ("human", f"Operational snapshot (JSON):\n{json.dumps(snapshot, default=str)}\n\nQuestion: {question}"),
+        ])
+        return {
+            "question": question,
+            "answer": result.answer,
+            "root_causes": result.root_causes,
+            "recommended_actions": result.recommended_actions,
+            "snapshot": snapshot,
+        }
+    except Exception as e:
+        # Graceful fallback: return the snapshot with a templated read.
+        wow = snapshot.get("sentiment_wow", {})
+        delta = None
+        if wow.get("this_week") is not None and wow.get("last_week") is not None:
+            delta = round((wow["this_week"] - wow["last_week"]) * 100)
+        return {
+            "question": question,
+            "answer": f"Based on the last 7 days: {snapshot.get('last_7_days', {}).get('total', 0)} cases, "
+                      f"{snapshot.get('last_7_days', {}).get('complaints', 0)} complaints, "
+                      f"average sentiment {snapshot.get('last_7_days', {}).get('avg_sentiment', 'n/a')}."
+                      + (f" Sentiment moved {delta:+d}% week-over-week." if delta is not None else ""),
+            "root_causes": ["LLM unavailable — showing data summary only."],
+            "recommended_actions": ["Review the lowest-sentiment service below.", "Check escalation-risk list."],
+            "snapshot": snapshot,
+            "degraded": True,
+        }

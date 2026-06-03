@@ -18,6 +18,7 @@ from .routes import (
     chat,
     copilot,
     crm,
+    documents,
     exec_dashboard,
     feedback,
     health,
@@ -86,6 +87,7 @@ app.include_router(exec_dashboard.router)
 app.include_router(crm.router)
 app.include_router(notifications.router)
 app.include_router(recordings.router)
+app.include_router(documents.router)
 app.include_router(feedback.router)
 app.include_router(analytics.router)
 app.include_router(activity.router)

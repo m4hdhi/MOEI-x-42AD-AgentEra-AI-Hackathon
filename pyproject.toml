@@ -6,6 +6,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 authors = [{ name = "AgentEra Team" }]
+dependencies = [
+    "joblib>=1.5.3",
+    "scikit-learn>=1.9.0",
+]
 
 [build-system]
 requires = ["setuptools>=77"]

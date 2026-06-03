@@ -76,6 +76,7 @@ async def voice_turn(msg: IncomingMessage, request: Request) -> AgentResponse:
         suggested_replies=result.get("suggested_replies", []),
         citations=result.get("citations", []),
         case_number=result.get("case_number"),
+        escalation_risk=result.get("escalation_risk", {}),
     )
 
 

@@ -159,6 +159,9 @@ export default function ExecPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-8">
+        {/* ===== AI Leadership Advisor ===== */}
+        <AdvisorBox />
+
         {/* ===== Brief-mandated operational KPIs ===== */}
         <OperationalKpiRow op={opKpis} feedback={feedback} />
 
@@ -599,6 +602,99 @@ function Loading({ h }: { h: number }) {
 }
 
 const fmtCallDur = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
+
+type Advice = { answer: string; root_causes: string[]; recommended_actions: string[]; degraded?: boolean };
+const ADVISOR_SUGGESTIONS = [
+  "Why might satisfaction be at risk this week?",
+  "Which service needs the most attention right now?",
+  "Where are we likely to see escalations?",
+];
+
+function AdvisorBox() {
+  const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [advice, setAdvice] = useState<Advice | null>(null);
+
+  async function ask(question?: string) {
+    const text = (question ?? q).trim();
+    if (!text || busy) return;
+    setQ(text);
+    setBusy(true);
+    setAdvice(null);
+    try {
+      const r = await fetch(`${API_URL}/analytics/advisor`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: text }),
+      });
+      setAdvice(await r.json());
+    } catch {
+      setAdvice({ answer: "Could not reach the advisor.", root_causes: [], recommended_actions: [] });
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="rounded-sm border border-moei-bronze/50 bg-gradient-to-br from-moei-cream/60 to-white p-5">
+      <div className="flex items-center gap-2">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-moei-bronze text-white">
+          <Sparkles size={16} />
+        </span>
+        <div>
+          <div className="text-sm font-bold text-moei-ink">AI Leadership Advisor</div>
+          <div className="text-[11px] text-moei-muted">Ask about performance in plain language — grounded in live data.</div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && ask()}
+          placeholder="e.g. Why did customer satisfaction drop this week?"
+          className="flex-1 rounded-md border border-moei-line bg-white px-3 py-2 text-sm outline-none focus:border-moei-bronze"
+        />
+        <button onClick={() => ask()} disabled={busy} className="moei-btn-primary disabled:opacity-60">
+          {busy ? "Analysing…" : "Ask"}
+        </button>
+      </div>
+
+      {!advice && !busy && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {ADVISOR_SUGGESTIONS.map((s) => (
+            <button key={s} onClick={() => ask(s)}
+              className="rounded-full border border-moei-line bg-white px-2.5 py-1 text-[11px] text-moei-body hover:border-moei-bronze hover:text-moei-bronze">
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {advice && (
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <div className="md:col-span-3 rounded-md bg-white border border-moei-line p-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-moei-bronze">Answer</div>
+            <p className="mt-1 text-sm text-moei-ink">{advice.answer}</p>
+          </div>
+          {advice.root_causes?.length > 0 && (
+            <div className="rounded-md bg-white border border-moei-line p-3 md:col-span-1">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-moei-muted">Likely root causes</div>
+              <ul className="mt-1 space-y-1 text-xs text-moei-body">
+                {advice.root_causes.map((c, i) => <li key={i} className="flex gap-1.5"><span className="text-moei-bronze">•</span>{c}</li>)}
+              </ul>
+            </div>
+          )}
+          {advice.recommended_actions?.length > 0 && (
+            <div className="rounded-md bg-white border border-moei-line p-3 md:col-span-2">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-moei-muted">Recommended actions</div>
+              <ul className="mt-1 space-y-1 text-xs text-moei-body">
+                {advice.recommended_actions.map((a, i) => <li key={i} className="flex gap-1.5"><span className="text-emerald-600">✓</span>{a}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function VoiceCentreCard({ voice }: { voice: VoiceStats | null }) {
   return (

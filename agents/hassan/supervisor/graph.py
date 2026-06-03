@@ -200,4 +200,5 @@ async def run_supervisor(
         "case_number": final.get("case_number"),
         "sentiment": final.get("sentiment"),
         "next_best_action": final.get("next_best_action"),
+        "escalation_risk": final.get("escalation_risk") or {},
     }

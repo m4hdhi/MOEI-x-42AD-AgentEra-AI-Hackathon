@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, User, Globe, Accessibility, ChevronDown, LogIn, LogOut } from "lucide-react";
 import { loginUrl, logoutAndRedirect, useUaePassSession } from "@/lib/auth";
+import { AccessibilityToggle } from "@/components/AccessibilityToggle";
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -123,9 +124,7 @@ export function MoeiHeader() {
               <button className="transition-colors hover:text-moei-bronze" aria-label="Citizen account">
                 <User size={18} />
               </button>
-              <button className="transition-colors hover:text-moei-bronze" aria-label="Accessibility">
-                <Accessibility size={18} />
-              </button>
+              <AccessibilityToggle />
               <button className="transition-colors hover:text-moei-bronze" aria-label="Language">
                 <Globe size={18} />
               </button>

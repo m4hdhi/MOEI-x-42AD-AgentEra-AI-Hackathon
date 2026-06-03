@@ -36,6 +36,7 @@ class SupervisorState(TypedDict, total=False):
     worker_draft: str
     tool_calls: Annotated[list[dict], add]
     housing_decision: dict | None
+    handled_by: str                 # which specialist agent answered (multi-agent ecosystem)
 
     # Critic
     critic_score: float
@@ -56,3 +57,4 @@ class SupervisorState(TypedDict, total=False):
     sentiment: float                # 0..1 (0=very negative, 1=very positive)
     correlation_id: str
     next_best_action: str           # one-line action hint for the human co-pilot
+    escalation_risk: dict           # ML-predicted complaint/escalation risk {risk, band, factors}
