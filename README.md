@@ -1,174 +1,184 @@
-# Hassan — Hyper-Adaptive Smart Service Agent for the Nation
+# MOEI Omnichannel AI Customer Engagement Agent
 
-> MOEI × 42 Abu Dhabi AgentEra AI Hackathon · Challenge 3 — Omnichannel AI Customer Engagement Agent
->
-> Vertical-sliced through the **Sheikh Zayed Housing Programme**, architected to extend to all 174 UAE federal services.
+> **MOEI × 42 Abu Dhabi · AgentEra AI Hackathon — Challenge 3**
+> A unified, intelligent customer-engagement layer for the UAE Ministry of Energy and Infrastructure,
+> operating consistently across **WhatsApp, the voice contact centre, the website, and the mobile app**.
+
+Citizens see one assistant — the **MOEI Smart Assistant** — that remembers them across every channel,
+answers in Arabic or English, creates and tracks cases, and hands off to a human when needed.
+Leadership gets one real-time dashboard; contact-centre agents get an AI co-pilot.
 
 ---
 
-## What this is
+## The problem (Challenge 3)
 
-A multi-agent fabric that lets one Emirati citizen carry a single conversation across
-**WhatsApp → voice → web → mobile** with persistent memory, Arabic+English (Khaliji-aware),
-real-time sentiment, auto-escalation to human co-pilots, and a **live PDPL-aligned audit trail**.
+MOEI engages customers across WhatsApp, voice, web, and mobile — but each channel runs in isolation:
+fragmented context, repeated customer effort, inconsistent quality, and no unified operational view.
+This project is a single agentic AI layer that unifies all four channels.
 
-The 5-minute demo: *Mariam from Sharjah, 4 months behind on her SZHP loan, gets a 12-month rescheduling
-plan in 90 seconds, jumping from WhatsApp to voice to web — Hassan greets her by name on every channel.*
+## What it does
+
+**A · Conversational intelligence (cross-channel)**
+- Bilingual (Arabic / English) natural-language understanding with consistent intent classification.
+- Retrieval-grounded answers (RAG) over a MOEI knowledge base — every reply can cite its source.
+- Persistent citizen context: start on WhatsApp, continue on the app — the assistant remembers.
+- Real-time voice tone & sentiment (calm / stressed / frustrated / satisfied) feeding the unified profile.
+
+**B · Operational execution**
+- Automated case creation, routing, tracking, and resolution (CRM).
+- Smart search across services, policies, FAQs, and procedures — same results on web, mobile, and chat.
+- Next-best-action recommendations and proactive WhatsApp follow-ups.
+
+**C · Agent & leadership enablement**
+- AI co-pilot for human agents (live transcript, sentiment, suggested next action).
+- Executive dashboard: real-time KPIs, sentiment trends, channel performance, escalation risk, forecasting.
+- Voice contact-centre analytics: every call recorded, transcribed, summarised, and quality-scored.
+- PDPL Article 7 audit trail — replay exactly how any decision was reached.
+
+## Success metrics (on the executive dashboard)
+First-contact resolution · average handle time · customer effort score · CSAT · channel deflection.
+
+---
 
 ## Architecture
 
 ```
-WhatsApp · Voice · Web · Mobile
-            │
-            ▼
-   Channel Gateway (FastAPI)        normalize · user_id · language · correlation_id
-            │
-            ▼
-     LangGraph SUPERVISOR           durable checkpoints → Postgres
-   ┌────────────────────────┐
-   │ Router                 │  intent + service classification
-   │ Memory Loader (Mem0)   │  past interactions, preferences, open cases
-   │ Policy Guardrails      │  PII redaction (Presidio) · bias · policy
-   │ Service Dispatcher     │  parallel sub-agent dispatch
-   │ Reflection / Critic    │  separate LLM critiques the draft
-   │ Escalation Decider     │  sentiment × risk × confidence → co-pilot
-   │ Response Composer      │  SSML / WhatsApp blocks / JSX cards
-   └────────────────────────┘
-        │       │       │
-        ▼       ▼       ▼
-   HousingAgent  EnergyAgent  MaritimeAgent  …  (Agno workers, ~1.7µs instantiation)
-        │
-        ▼
-   Knowledge Layer        Human Co-pilot Console
-   · Qdrant (RAG)         · live transcript
-   · LightRAG (rules)     · sentiment meter
-   · Docling-parsed       · suggested replies
-   · Mem0 user memory     · audit trail link
-                  │
-                  ▼
-        Langfuse (every span) · Postgres (audit) · Redis (short-term)
+        WhatsApp   ·   Voice   ·   Web   ·   Mobile
+                          │
+                          ▼
+              Channel Gateway (FastAPI)         normalise · user_id · language · correlation_id
+                          │
+                          ▼
+              LangGraph SUPERVISOR  (one brain, all channels)
+        ┌───────────────────────────────────────────────┐
+        │ Router          intent + service + language     │
+        │ Sentiment       tone scoring                     │
+        │ Memory Loader   cross-channel history (Redis)    │
+        │ Guardrails      PII redaction · injection guard  │
+        │ Dispatcher ───► service workers + Knowledge RAG  │
+        │ Critic          quality self-check               │
+        │ Escalation      sentiment × risk × confidence    │
+        │ Composer        channel-aware reply + citations  │
+        │ Next-Best-Action  co-pilot hint                  │
+        │ Persist         case · activity · audit trail    │
+        └───────────────────────────────────────────────┘
+              │              │                │
+              ▼              ▼                ▼
+     Service workers   Knowledge base    Post-Call Analyst
+   (housing, energy,   (Postgres FTS:    (summary, QA score,
+    transport,          curated facts +   FCR, sentiment
+    maritime, infra)    crawled pages)    trajectory)
 ```
 
-## Monorepo layout
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Orchestration | **LangGraph** multi-node supervisor |
+| Primary LLM | **OpenAI GPT-4o-mini** (quality) · **Groq Llama 3.3 70B** (fast fallback) |
+| API | **FastAPI** (Python 3.12, `uv`) |
+| Web | **Next.js 15** (App Router, Tailwind) |
+| Database | **PostgreSQL 16** — cases, citizens, recordings, knowledge base (full-text search), audit log |
+| Cache / memory | **Redis 7** — short-term cross-channel conversation buffer |
+| Voice | Browser SpeechRecognition (STT) + **ElevenLabs** streaming TTS (browser TTS fallback) |
+| Messaging | **Twilio** WhatsApp (sandbox) |
+| Identity | **UAE PASS** (wire-compatible mock for the demo; one env-var switch to staging) |
+| Observability | **Langfuse** (LLM traces — engineering only) |
+
+No paid vector DB: the knowledge base uses Postgres full-text search (bilingual), so it runs at $0 and
+swaps to pgvector later without changing agent code.
+
+---
+
+## Repository layout
 
 ```
 apps/
-  api/        FastAPI Channel Gateway — single ingress, normalizes payloads
-  web/        Next.js 15 — citizen chat, co-pilot console, exec dashboard
+  api/            FastAPI gateway + routes (auth, chat, voice, whatsapp, crm, recordings, …)
+  web/            Next.js citizen site + admin console
 agents/
-  hassan/
-    supervisor/   LangGraph state machine (Router → Composer)
-    workers/      Agno per-domain workers (HousingAgent first)
-    tools/        federal-grade tools (szhp_rules_engine, doc_ocr, …)
-    memory/       Mem0 + Qdrant glue
+  hassan/         LangGraph supervisor, service workers, knowledge + post-call agents, LLM clients
 infra/
-  docker-compose.yml   Langfuse · Qdrant · Postgres · Redis
-  postgres/init.sql    audit table, pgvector
-data/                  synthetic SZHP rescheduling cases + PDFs (not committed)
-docs/                  PDPL mapping · 90-day pilot deck · demo script
+  docker-compose.yml      Postgres + Redis + Langfuse
+  postgres/               init.sql … init_v6 (schema migrations)
+scripts/
+  crawl_moei.py           crawl moei.gov.ae → knowledge_documents (EN/AR)
+  seed_omnichannel.py     synthetic demo data (cases, notifications, activity)
+docs/                     PDPL mapping, 90-day pilot, deck outline
 ```
 
-## Quick start (local)
+---
+
+## Running it locally
+
+**Prerequisites:** Docker, Node 20+, `pnpm`, and [`uv`](https://docs.astral.sh/uv/).
 
 ```bash
-# 1. Bring up infra (Postgres + Redis + Qdrant + Langfuse)
+# 1. Infrastructure (Postgres + Redis + Langfuse)
 make infra-up
 
-# 2. Python deps (uv)
-make sync                      # uv sync + uv pip install -e agents
+# 2. Database schema (run each migration in order)
+for f in infra/postgres/init.sql infra/postgres/init_v2.sql infra/postgres/init_v3.sql \
+         infra/postgres/init_v4_knowledge.sql infra/postgres/init_v5_recordings.sql \
+         infra/postgres/init_v6_citizens.sql; do
+  docker exec -i hassan-postgres psql -U hassan -d hassan < "$f"
+done
 
-# 3. Copy env template
+# 3. Secrets — copy the template and fill in your keys
 cp .env.example .env
-cp apps/web/.env.example apps/web/.env.local
-# Minimum: set GROQ_API_KEY for the live LLM path.
-# Everything else is optional — graceful fallbacks keep the demo running.
+#   set OPENAI_API_KEY (or GROQ_API_KEY), ELEVENLABS_API_KEY,
+#   TWILIO_* , HASSAN_SESSION_SECRET, DATABASE_URL, REDIS_URL
 
-# 4. Generate synthetic data (300 SZHP cases + 100 salary slips)
-make synth
-
-# 5. Run API
+# 4. Python deps + API on :8000
+make sync
 make api
 
-# 6. Run web (separate terminal)
-make web-install && make web
+# 5. Web deps + frontend on :3000  (separate terminal)
+make web-install
+make web
 
-# 7. Verify end-to-end
-make smoke
-make test                      # 16 passed, 1 skipped (Groq-live test runs with key)
+# 6. (optional) Populate demo content
+make synth                                       # synthetic cases + activity
+uv run python scripts/crawl_moei.py --max 250    # crawl moei.gov.ae into the knowledge base
 ```
 
-Open <http://localhost:3000> — landing page with citizen, co-pilot, executive, auditor entrypoints.
+Open **http://localhost:3000**.
 
-| URL | Surface |
-| --- | --- |
-| `/`         | Brand landing — 4 personas |
-| `/chat`     | Citizen web chat (auto-RTL on Arabic) |
-| `/copilot`  | Human co-pilot console (live transcript, sentiment, suggested replies) |
-| `/exec`     | Executive dashboard (KPIs, trends, risk bands) |
-| `/audit`    | Auditor: PDPL Art. 7 right-to-explanation by correlation_id |
+### Surfaces
 
-Langfuse UI: <http://localhost:3001> (dev login in `infra/docker-compose.yml`).
+| URL | Who | What |
+|---|---|---|
+| `/` | Citizen | MOEI-styled homepage + smart search + "Try on WhatsApp" |
+| `/chat` | Citizen | Chat assistant *(UAE PASS sign-in required)* |
+| `/call` | Citizen | Voice contact centre — live tone, recording, case creation |
+| `/mobile` | Citizen | Mobile-app channel |
+| `/csat` | Citizen | Post-case satisfaction survey |
+| `/admin/login` | Staff | Console sign-in (demo password `admin`) |
+| `/admin/exec` | Staff | Executive dashboard (KPIs, forecasting, live activity) |
+| `/admin/citizens` | Staff | Citizen directory + 360° profile with next actions |
+| `/admin/calls` | Staff | Call recordings, transcripts, AI summaries, QA scores |
+| `/admin/copilot` | Staff | Live agent co-pilot |
+| `/admin/audit` | Staff | PDPL audit trail (look up by case number) |
 
-## Tech stack — locked Day 1
+---
 
-| Layer            | Choice                                                                  |
-| ---------------- | ----------------------------------------------------------------------- |
-| Orchestrator     | **LangGraph** (durable checkpoints, time-travel debug, HITL interrupts) |
-| Worker runtime   | **Agno** (~1.7µs instantiation per their GitHub bench)                  |
-| Primary LLM      | Groq `llama-3.3-70b-versatile` (6k TPM / 30 RPM free)                   |
-| Long-context     | Google Gemini 2.5 Flash                                                 |
-| Arabic specialist| Jais-Family-30B-chat via HF Inference                                   |
-| Speed-burst      | Cerebras Inference (~2,100 tps Llama-3.3-70B)                           |
-| Local fallback   | Ollama `qwen2.5:7b` (fast path) · `qwen2.5:32b-instruct` (reasoner)     |
-| Voice            | LiveKit Agents + Deepgram (EN) + Whisper (AR) + ElevenLabs (AR TTS)     |
-| Memory           | Mem0 + Qdrant + Redis                                                   |
-| RAG              | Docling → Qdrant · LightRAG for governance rules                        |
-| WhatsApp         | Twilio Sandbox (dev) → Meta Cloud API (prod)                            |
-| Observability    | Langfuse self-hosted — *this is the audit trail demo*                   |
-| Frontend         | Next.js 15 · shadcn/ui · Tailwind · Recharts · native RTL               |
-| Backend          | FastAPI · Python 3.12 · Pydantic v2                                     |
-| DB               | Postgres 16 + pgvector                                                  |
+## Data & privacy
 
-## Federal-grade differentiators
+- All demo data is **synthetic**; the moei.gov.ae crawl is public content.
+- The MOEI-provided datasets (CRM, NICE call recordings, logs, FAQs) load into the same
+  schema and knowledge base — no code changes required.
+- Citizen interactions are gated behind **UAE PASS sign-in**, so requests are stored against a
+  verified identity. PII is redacted in transit; every decision is logged for the right-to-explanation
+  audit trail (PDPL Article 7). `.env` secrets are never committed.
 
-1. **Cross-channel persistent memory in 90 seconds.** Same `user_id` across WhatsApp/voice/web — most teams skip this entirely.
-2. **Genuine multi-agent supervisor with live Langfuse trace on screen.** Click any node, see the actual LLM call.
-3. **Real-time voice sentiment + Khaliji-aware Arabic.**
-4. **Reflection/critic loop that catches and fixes a bad output live.** Scripted demo moment.
-5. **Local Ollama fallback unplugged from Wi-Fi.** Sovereignty point judges love.
-6. **PDPL mapping doc, audit UI, bias detector, PII redaction, on-prem story.**
-7. **A named agent.** "Hassan" beats "AI Agent v1.2" in judges' memory.
+---
 
-## What's built
+## Notes for reviewers
 
-All 17 working days are shipped. See [docs/build-plan.md](docs/build-plan.md) for the day-by-day completion table. Highlights:
+- The **browser voice call** is a real recording → transcript → AI-analysis pipeline at $0.
+  A physical line on **800 6634** would add Twilio Voice (telephony) — the intelligence layer behind it
+  is already built.
+- WhatsApp uses the Twilio sandbox (visitors send the join code shown on the homepage card);
+  production needs a Meta-verified MOEI WhatsApp Business number — a configuration step, not a rebuild.
 
-- **8-node LangGraph supervisor** with structured-output Router/Composer, separate-LLM Critic, escalation routing, and durable checkpoints
-- **Role-based LLM cascade** — Groq Llama 3.3 70B (primary) · Jais 30B (Arabic) · Gemini 2.5 Flash (long-ctx) · Ollama qwen2.5:7b (offline fallback). Automatic fall-back with `with_fallbacks()`
-- **HousingAgent worker** calling deterministic `szhp_rules_engine`, `risk_score` (with SHAP-style contributions), `doc_ocr` (Docling), `uaepass_lookup`
-- **Four channel ingresses**: `/chat/web`, `/voice/turn` + `/voice/token`, `/whatsapp/inbound` (Twilio with signature validation), all sharing the same supervisor
-- **Cross-channel memory** via Redis last-20-turns buffer keyed by `user_id` + optional Mem0 episodic memory
-- **Three operator UIs**: Citizen chat, Co-pilot console (sentiment, suggested replies, audit), Executive dashboard (Recharts: volumes, deflection, CSAT, risk bands)
-- **Federal-grade guardrails**: Emirates ID/IBAN/mobile/email PII redaction at gateway and composer, bias detector with auto-rewrite, prompt-injection guard, PDPL article-by-article mapping in [docs/pdpl-mapping.md](docs/pdpl-mapping.md)
-- **Audit trail UI** at `/audit?correlation_id=...` (PDPL Art. 7 right-to-explanation)
-- **Synthetic data generator**: 300 SZHP cases + 100 salary slips, PDPL-safe
-- **Demo deliverables**: 5-minute stage script ([README-Demo.md](README-Demo.md)), 12-slide deck outline ([docs/deck-outline.md](docs/deck-outline.md)), 90-day pilot plan with named MOEI sponsors and RACI ([docs/90-day-pilot.md](docs/90-day-pilot.md))
-
-## Verification
-
-```bash
-make test         # 16 passed, 1 skipped (live Groq path skips without key)
-make smoke        # Health + English + Arabic supervisor turns + exec KPIs
-```
-
-Live providers light up when their keys are set in `.env`; the demo runs end-to-end without any of them via the Ollama+Redis-no-op cascade.
-
-## Compliance
-
-- Federal Decree-Law No. 45/2021 (UAE PDPL) — synthetic demo data only; consent screen mockup; right-to-explanation via the audit trail UI.
-- Data residency target: Microsoft Azure UAE North · AWS Middle East (UAE) · Core42 / G42 Cloud.
-- All policy decisions encoded as deterministic Python (`szhp_rules_engine`) — the LLM never invents policy.
-
-## License
-
-Apache-2.0. See [LICENSE](LICENSE).
+*Built for the MOEI × 42 Abu Dhabi AgentEra AI Hackathon.*
