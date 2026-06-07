@@ -70,6 +70,8 @@ type VoiceStats = {
   total: number; today: number; avg_qa: number; avg_duration: number;
   resolution_rate: number; avg_sentiment: number;
 };
+type GeoItem = { emirate: string; cases: number; avg_sentiment: number | null; escalations: number; open_cases: number; status: string };
+type Geo = { items: GeoItem[]; hotspots: GeoItem[]; national_avg_sentiment: number };
 
 // ---- Constants ------------------------------------------------------------
 
@@ -97,6 +99,7 @@ export default function ExecPage() {
   const [opKpis, setOpKpis] = useState<OpKpis | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [voice, setVoice] = useState<VoiceStats | null>(null);
+  const [geo, setGeo] = useState<Geo | null>(null);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const sseRef = useRef<EventSource | null>(null);
 
@@ -111,6 +114,7 @@ export default function ExecPage() {
       fetch(`${API_URL}/crm/kpis`).then(r => r.json()).then(setOpKpis).catch(() => {});
       fetch(`${API_URL}/feedback/stats`).then(r => r.json()).then(setFeedback).catch(() => {});
       fetch(`${API_URL}/recordings/stats`).then(r => r.json()).then(setVoice).catch(() => {});
+      fetch(`${API_URL}/analytics/geo-satisfaction`).then(r => r.json()).then(setGeo).catch(() => {});
     };
     fetchAll();
     const t = setInterval(fetchAll, 8000);
@@ -169,6 +173,9 @@ export default function ExecPage() {
         <div className="mt-3">
           <KpiRow stats={stats} notifs={notifs} />
         </div>
+
+        {/* ===== National CX Command Center ===== */}
+        <GeoCommandCenter geo={geo} />
 
         {/* ===== Voice contact centre ===== */}
         <VoiceCentreCard voice={voice} />
@@ -602,6 +609,47 @@ function Loading({ h }: { h: number }) {
 }
 
 const fmtCallDur = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
+
+const GEO_STATUS: Record<string, { dot: string; bg: string; label: string }> = {
+  critical: { dot: "bg-red-500", bg: "border-red-200 bg-red-50", label: "Critical" },
+  watch: { dot: "bg-amber-500", bg: "border-amber-200 bg-amber-50", label: "Watch" },
+  healthy: { dot: "bg-emerald-500", bg: "border-emerald-200 bg-emerald-50", label: "Healthy" },
+  no_data: { dot: "bg-slate-300", bg: "border-moei-line bg-white", label: "No data" },
+};
+
+function GeoCommandCenter({ geo }: { geo: Geo | null }) {
+  return (
+    <Card title="National Customer Experience Command Center" icon={<Globe size={14} />} className="mt-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-moei-muted">Live satisfaction across the seven emirates (last 30 days).</p>
+        {geo && <span className="text-xs text-moei-body">National avg sentiment: <b className="text-moei-bronze">{Math.round((geo.national_avg_sentiment || 0) * 100)}%</b></span>}
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
+        {(geo?.items ?? []).map((g) => {
+          const st = GEO_STATUS[g.status] ?? GEO_STATUS.no_data;
+          return (
+            <div key={g.emirate} className={"rounded-lg border p-3 " + st.bg}>
+              <div className="flex items-center gap-1.5">
+                <span className={"h-2 w-2 rounded-full " + st.dot} />
+                <span className="text-[11px] font-semibold text-moei-ink">{g.emirate}</span>
+              </div>
+              <div className="mt-2 text-2xl font-bold text-moei-ink">
+                {g.avg_sentiment !== null ? `${Math.round(g.avg_sentiment * 100)}%` : "—"}
+              </div>
+              <div className="text-[10px] text-moei-muted">{g.cases} cases · {g.escalations} esc.</div>
+            </div>
+          );
+        })}
+      </div>
+      {geo && geo.hotspots.length > 0 && (
+        <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+          <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+          <span>Hotspots needing attention: {geo.hotspots.map((h) => h.emirate).join(", ")}. Ask the AI Advisor why.</span>
+        </div>
+      )}
+    </Card>
+  );
+}
 
 type Advice = { answer: string; root_causes: string[]; recommended_actions: string[]; degraded?: boolean };
 const ADVISOR_SUGGESTIONS = [

@@ -211,6 +211,50 @@ def heatmap() -> dict:
     }
 
 
+@router.get("/geo-satisfaction")
+def geo_satisfaction() -> dict:
+    """Per-emirate satisfaction + load for the National CX Command Center (Idea #11)."""
+    order = ["Abu Dhabi", "Dubai", "Sharjah", "Ajman", "Umm Al Quwain", "Ras Al Khaimah", "Fujairah"]
+    rows_by_em: dict[str, dict] = {}
+    try:
+        with db_cursor() as cur:
+            cur.execute(
+                """
+                SELECT COALESCE(emirate,'Unknown') AS emirate,
+                       COUNT(*) AS cases,
+                       ROUND(AVG(sentiment)::numeric, 2) AS avg_sentiment,
+                       COUNT(*) FILTER (WHERE status='escalated') AS escalations,
+                       COUNT(*) FILTER (WHERE status='open') AS open_cases
+                FROM cases
+                WHERE created_at > NOW() - INTERVAL '30 days'
+                GROUP BY emirate
+                """
+            )
+            for r in cur.fetchall():
+                rows_by_em[r["emirate"]] = {
+                    "emirate": r["emirate"],
+                    "cases": int(r["cases"]),
+                    "avg_sentiment": float(r["avg_sentiment"]) if r["avg_sentiment"] is not None else None,
+                    "escalations": int(r["escalations"]),
+                    "open_cases": int(r["open_cases"]),
+                }
+    except Exception as e:
+        return {"items": [], "error": str(e)}
+
+    items = []
+    for em in order:
+        d = rows_by_em.get(em) or {"emirate": em, "cases": 0, "avg_sentiment": None, "escalations": 0, "open_cases": 0}
+        sent = d["avg_sentiment"]
+        d["status"] = ("critical" if sent is not None and sent < 0.45
+                       else "watch" if sent is not None and sent < 0.6
+                       else "healthy" if sent is not None else "no_data")
+        items.append(d)
+    hotspots = [i for i in items if i["status"] in ("critical", "watch")]
+    return {"items": items, "hotspots": hotspots,
+            "national_avg_sentiment": round(sum(i["avg_sentiment"] or 0 for i in items if i["avg_sentiment"]) /
+                                            max(1, len([i for i in items if i["avg_sentiment"]])), 2)}
+
+
 # ============================ AI LEADERSHIP ADVISOR ============================
 # Leadership asks a question in plain language ("Why did satisfaction drop in housing
 # this week?"); we assemble the live operational snapshot and an LLM produces a

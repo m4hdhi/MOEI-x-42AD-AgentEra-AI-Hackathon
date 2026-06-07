@@ -34,4 +34,8 @@ class AgentResponse(BaseModel):
     citations: list[dict] = Field(default_factory=list)
     case_number: str | None = None
     escalation_risk: dict = Field(default_factory=dict)
+    emotion: str | None = None
+    urgency: str | None = None
+    life_events: list[str] = Field(default_factory=list)
+    autonomous: bool = False
     correlation_id: str

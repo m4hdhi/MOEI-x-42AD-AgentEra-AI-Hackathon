@@ -433,6 +433,56 @@ def citizen_profile(user_id: str) -> dict:
     }
 
 
+@router.get("/citizens/{user_id}/recommendations")
+def citizen_recommendations(user_id: str) -> dict:
+    """Hyper-personalized service recommendations (challenge Idea #9).
+
+    Derived from the citizen's own history: open cases, frequent services, recent life-event
+    signals, and preferred channel. Powers a 'Recommended for you' panel on the citizen surface.
+    """
+    from collections import Counter
+    recs: list[dict] = []
+    try:
+        with db_cursor() as cur:
+            cur.execute("SELECT service, status, case_number, intent FROM cases WHERE user_id=%s ORDER BY created_at DESC LIMIT 50", (user_id,))
+            cases = [dict(r) for r in cur.fetchall()]
+            cur.execute("""SELECT summary, payload FROM activity_events
+                           WHERE user_id=%s AND event_type='life_event' ORDER BY id DESC LIMIT 3""", (user_id,))
+            life = [dict(r) for r in cur.fetchall()]
+    except Exception:
+        cases, life = [], []
+
+    open_cases = [c for c in cases if c.get("status") in ("open", "in_progress", "escalated")]
+    svc = Counter(c["service"] for c in cases if c.get("service") and c["service"] != "unknown")
+
+    for oc in open_cases[:2]:
+        recs.append({
+            "title": f"Track your {oc['service']} request",
+            "reason": f"You have an open case ({oc['case_number']})",
+            "action": "Check status", "href": "/chat",
+        })
+    for ev in life:
+        rec_text = (ev.get("payload") or {}).get("recommendation") or ev.get("summary", "")
+        recs.append({"title": "Based on your situation", "reason": rec_text.replace("🎯 Life-event detected · ", ""),
+                     "action": "Explore", "href": "/chat"})
+    SVC_REC = {
+        "housing": ("Sheikh Zayed Housing Programme", "You often use housing services"),
+        "energy": ("Energy & water services", "You often use energy services"),
+        "maritime": ("Maritime & vessel services", "You often use maritime services"),
+        "transport": ("Transport services", "You often use transport services"),
+        "infrastructure": ("Infrastructure services", "You often use infrastructure services"),
+    }
+    for s, _ in svc.most_common(2):
+        if s in SVC_REC and not any(s in r["title"].lower() for r in recs):
+            t, why = SVC_REC[s]
+            recs.append({"title": t, "reason": why, "action": "Open service", "href": "/chat"})
+
+    if not recs:
+        recs.append({"title": "Explore MOEI services", "reason": "Popular this month",
+                     "action": "Browse", "href": "/chat"})
+    return {"user_id": user_id, "recommendations": recs[:4]}
+
+
 @router.post("/cases/{case_number}/action")
 def case_action(case_number: str, payload: dict = Body(...)) -> dict:
     """Staff next-action on a case: resolve / escalate / reopen / assign.

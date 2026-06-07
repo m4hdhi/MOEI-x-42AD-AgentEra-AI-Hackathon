@@ -168,6 +168,21 @@ def emit_activity(
         logger.debug(f"activity: emit failed: {e}")
 
 
+def resolve_case_autonomously(case_number: str) -> None:
+    """Mark a case resolved by the agent with no human intervention (Autonomous Resolution)."""
+    if not _DB_AVAILABLE:
+        return
+    try:
+        with db_cursor() as cur:
+            cur.execute(
+                """UPDATE cases SET status='resolved', resolved_at=NOW(), assigned_to='AI (autonomous)',
+                   updated_at=NOW() WHERE case_number=%s AND status NOT IN ('resolved','escalated')""",
+                (case_number,),
+            )
+    except Exception as e:
+        logger.debug(f"autonomous resolve failed: {e}")
+
+
 def write_audit_trail(
     *,
     correlation_id: str,

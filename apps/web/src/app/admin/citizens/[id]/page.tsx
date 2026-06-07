@@ -90,17 +90,18 @@ export default function CitizenProfilePage() {
       const r = await fetch(`${API_URL}/notifications`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: userId, channel: "whatsapp", template,
+          user_id: userId, channel: "auto", template,
           case_number: openCase?.case_number, scheduled_in_hours: 0,
         }),
       });
       const res = await r.json().catch(() => ({}));
       const d = res.delivery || {};
       markDone(template);
+      const pref = d.preferred_channel ? ` (preferred: ${d.preferred_channel})` : "";
       if (d.reachable && d.mode === "live") {
-        flash(`${label} sent to WhatsApp ${d.to}`, "ok");
+        flash(`${label} sent to WhatsApp ${d.to}${pref}`, "ok");
       } else if (d.reachable) {
-        flash(`${label} prepared for WhatsApp ${d.to} (simulated — no live credentials)`, "info");
+        flash(`${label} prepared for WhatsApp ${d.to} (simulated)${pref}`, "info");
       } else {
         flash(`${label} queued — citizen has no WhatsApp on file yet`, "info");
       }

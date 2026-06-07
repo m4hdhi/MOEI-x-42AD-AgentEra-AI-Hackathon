@@ -68,6 +68,13 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
   const userId = uaepassSession.emirates_id || "anonymous";
   const userName = uaepassSession.full_name_en || "Citizen";
 
+  // Hyper-personalized recommendations for this citizen.
+  const [recs, setRecs] = useState<{ title: string; reason: string; action: string; href: string }[]>([]);
+  useEffect(() => {
+    fetch(`${API_URL}/crm/citizens/${encodeURIComponent(userId)}/recommendations`)
+      .then((r) => r.json()).then((d) => setRecs(d.recommendations || [])).catch(() => {});
+  }, [userId]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -327,9 +334,31 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
                   <div className="flex h-full flex-col items-center justify-center text-center">
                     <Sparkles className="text-moei-bronze" size={28} />
                     <p className="mt-3 max-w-md text-sm text-moei-body">
-                      Type a question, tap{" "}
-                      <Mic className="inline -mt-0.5" size={14} /> to speak, or try a prompt →
+                      Welcome back{userName ? `, ${userName.split(" ")[0]}` : ""}. Type a question, tap{" "}
+                      <Mic className="inline -mt-0.5" size={14} /> to speak, or pick a suggestion.
                     </p>
+                    {recs.length > 0 && (
+                      <div className="mt-5 w-full max-w-md">
+                        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-moei-bronze">
+                          Recommended for you
+                        </div>
+                        <div className="space-y-2">
+                          {recs.map((r, i) => (
+                            <button
+                              key={i}
+                              onClick={() => send(r.title)}
+                              className="flex w-full items-center justify-between gap-3 rounded-xl border border-moei-line bg-white px-3 py-2 text-left transition hover:border-moei-bronze"
+                            >
+                              <span>
+                                <span className="block text-sm font-medium text-moei-ink">{r.title}</span>
+                                <span className="block text-[11px] text-moei-muted">{r.reason}</span>
+                              </span>
+                              <span className="shrink-0 text-[11px] font-semibold text-moei-bronze">{r.action} →</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div className="space-y-4">

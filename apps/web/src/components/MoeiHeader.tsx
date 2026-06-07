@@ -25,6 +25,7 @@ const APP_NAV: { href: string; label: string; external?: boolean }[] = [
   { href: "/chat", label: "Chat" },
   { href: "/mobile", label: "Mobile App" },
   { href: "/call", label: "Call Centre" },
+  { href: "/sign", label: "Sign Language" },
 ];
 
 export function MoeiHeader() {

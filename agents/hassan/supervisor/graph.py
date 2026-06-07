@@ -201,4 +201,8 @@ async def run_supervisor(
         "sentiment": final.get("sentiment"),
         "next_best_action": final.get("next_best_action"),
         "escalation_risk": final.get("escalation_risk") or {},
+        "emotion": final.get("emotion"),
+        "urgency": final.get("urgency"),
+        "life_events": final.get("life_events") or [],
+        "autonomous": bool(final.get("autonomous")),
     }

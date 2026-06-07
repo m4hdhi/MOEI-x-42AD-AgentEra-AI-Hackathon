@@ -59,6 +59,26 @@ def schedule_notification(payload: dict = Body(...)) -> dict:
     for k in required:
         if k not in payload:
             raise HTTPException(400, f"missing field: {k}")
+
+    # Preferred-channel routing: channel="auto" → the citizen's most-used channel.
+    if payload.get("channel") == "auto":
+        preferred = "whatsapp"
+        try:
+            with db_cursor() as cur:
+                cur.execute(
+                    """SELECT channel, COUNT(*) n FROM cases WHERE user_id=%s
+                       GROUP BY channel ORDER BY n DESC LIMIT 1""",
+                    (payload["user_id"],),
+                )
+                r = cur.fetchone()
+                if r and r.get("channel"):
+                    preferred = r["channel"]
+        except Exception:
+            pass
+        # Web/mobile/voice are pull channels in this demo → deliver via WhatsApp if linked, else in-app.
+        payload["channel"] = preferred if preferred in ("whatsapp", "sms") else "whatsapp"
+        payload["_preferred"] = preferred
+
     scheduled_at: datetime
     if "scheduled_at" in payload:
         scheduled_at = datetime.fromisoformat(payload["scheduled_at"].replace("Z", "+00:00"))
@@ -105,6 +125,8 @@ def schedule_notification(payload: dict = Body(...)) -> dict:
                 }
 
     result = _ser(row)
+    if payload.get("_preferred"):
+        delivery["preferred_channel"] = payload["_preferred"]
     result["delivery"] = delivery
     return result
 

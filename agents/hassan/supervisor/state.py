@@ -55,6 +55,10 @@ class SupervisorState(TypedDict, total=False):
     # Cross-cutting metadata used by persist/CRM
     user_name: str
     sentiment: float                # 0..1 (0=very negative, 1=very positive)
+    emotion: str                    # angry | anxious | frustrated | satisfied | neutral
+    urgency: str                    # low | medium | high
+    life_events: list[str]          # detected life events → proactive service recs
+    autonomous: bool                # case fully resolved by the agent, no human needed
     correlation_id: str
     next_best_action: str           # one-line action hint for the human co-pilot
     escalation_risk: dict           # ML-predicted complaint/escalation risk {risk, band, factors}

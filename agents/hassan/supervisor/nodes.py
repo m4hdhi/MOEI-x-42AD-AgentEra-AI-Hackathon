@@ -123,6 +123,10 @@ def _keyword_intent(text: str) -> str | None:
     if any(k in tl for k in ("i suggest", "you should", "why don't you", "i recommend", "it would be better")) \
        or "اقترح" in text:
         return "suggestion"
+    if any(k in tl for k in ("status of", "where is my", "track my", "any update", "has my", "is my application",
+                             "my request", "my application", "approved yet")) \
+       or any(k in text for k in ("حالة طلبي", "أين طلبي", "تتبع")):
+        return "status_check"
     return None
 
 
@@ -230,11 +234,12 @@ async def router_node(state: SupervisorState) -> dict:
         }
     except Exception as e:
         logger.warning(f"Router LLM failed ({type(e).__name__}: {e}); using keyword fallback")
+        # Floor confidence at 0.5 so a merely-ambiguous query isn't auto-escalated (<0.4).
         return {
             "intent": "service_request",
             "service": kw_service,
             "language": detected_lang,
-            "confidence": kw_conf,
+            "confidence": max(kw_conf, 0.5),
         }
 
 
@@ -424,6 +429,10 @@ def escalation_node(state: SupervisorState) -> dict:
     """
     if state.get("intent") == "escalate_to_human":
         return {"escalated": True, "escalation_reason": "explicit citizen request"}
+    # Emotion-aware: a high-urgency citizen (emergency, vulnerable person) is fast-tracked.
+    if state.get("urgency") == "high":
+        emo = state.get("emotion", "neutral")
+        return {"escalated": True, "escalation_reason": f"high urgency ({emo}) — priority human handoff"}
     if state.get("critic_score", 1.0) < 0.65:
         return {"escalated": True, "escalation_reason": f"critic flagged ({state.get('critic_notes', '')})"}
     housing = state.get("housing_decision") or {}
@@ -628,23 +637,86 @@ async def _llm_sentiment(text: str) -> float | None:
         return None
 
 
-async def sentiment_node(state: SupervisorState) -> dict:
-    """Sentiment scoring: keyword for text channels; LLM-assisted for voice transcripts.
+_URGENCY_KW = (
+    "urgent", "emergency", "immediately", "right now", "asap", "today", "can't wait",
+    "cannot wait", "elderly", "mother", "father", "child", "baby", "medical", "hospital",
+    "no power", "no water", "unsafe", "danger", "leak", "deadline", "evicted",
+    "عاجل", "طارئ", "فورا", "حالا", "اليوم", "خطر", "مستشفى", "والدتي", "والدي",
+)
 
-    Voice STT loses prosody, so a 1-line LLM call materially helps. We cache on the
-    text body so repeated turns are free.
+
+def _emotion_label(text: str, sentiment: float) -> str:
+    """Map sentiment + cues to an emotion (Emotion-Aware Government, challenge Idea #2)."""
+    tl = text.lower()
+    if any(k in tl for k in ("furious", "angry", "unacceptable", "outrageous", "ridiculous")) or any(k in text for k in ("غاضب", "غير مقبول")):
+        return "angry"
+    if any(k in tl for k in ("worried", "anxious", "scared", "afraid", "stressed", "nervous")) or any(k in text for k in ("قلق", "خائف", "متوتر")):
+        return "anxious"
+    if sentiment < 0.4:
+        return "frustrated"
+    if sentiment >= 0.75:
+        return "satisfied"
+    return "neutral"
+
+
+def _urgency_level(text: str, sentiment: float) -> str:
+    tl = text.lower()
+    hits = sum(1 for k in _URGENCY_KW if (k in tl if k.isascii() else k in text))
+    if hits >= 2 or (hits >= 1 and sentiment < 0.35):
+        return "high"
+    if hits >= 1:
+        return "medium"
+    return "low"
+
+
+# Life Event Detection Engine (challenge Idea #3): infer significant life events and the
+# MOEI services they unlock, so the agent can proactively recommend them.
+_LIFE_EVENTS = {
+    "marriage": (("married", "marriage", "wedding", "getting married", "زواج", "تزوجت"),
+                 "Newly married — may qualify for Sheikh Zayed Housing Programme support"),
+    "new_home": (("new home", "building a house", "build a house", "new villa", "moved house",
+                  "بناء منزل", "منزل جديد", "بيت جديد"),
+                 "Building/owning a home — housing grants, connections, and permits apply"),
+    "new_baby": (("new baby", "newborn", "had a baby", "expecting", "مولود", "طفل جديد"),
+                 "Growing family — review housing eligibility and family services"),
+    "retirement": (("retired", "retirement", "pension", "تقاعد", "تقاعدت"),
+                   "Retirement — revisit housing instalments and support options"),
+    "new_business": (("started a business", "new company", "trade licence", "investor", "شركة جديدة", "رخصة تجارية"),
+                     "New business — maritime/transport/energy commercial services may apply"),
+    "job_loss": (("lost my job", "unemployed", "laid off", "fired", "فقدت وظيفتي", "عاطل"),
+                 "Income change — proactively offer SZHP hardship rescheduling"),
+}
+
+
+def _detect_life_events(text: str) -> list[str]:
+    tl = text.lower()
+    out = []
+    for _, (kws, message) in _LIFE_EVENTS.items():
+        if any((k in tl) if k.isascii() else (k in text) for k in kws):
+            out.append(message)
+    return out[:2]
+
+
+async def sentiment_node(state: SupervisorState) -> dict:
+    """Sentiment + emotion + urgency scoring (Emotion-Aware Government).
+
+    Voice STT loses prosody, so a 1-line LLM call materially helps for voice. We then
+    derive an emotion label (angry/anxious/frustrated/satisfied/neutral) and an urgency
+    level, which downstream nodes use to adapt tone and prioritise.
     """
     text = state.get("text") or ""
     channel = state.get("channel", "web")
-    # Voice: try the LLM (better signal on stripped STT), fall back to keywords
+    score = None
     if channel == "voice":
-        llm_score = await _llm_sentiment(text)
-        if llm_score is not None:
-            logger.info(f"sentiment(voice-llm): {llm_score:.2f}")
-            return {"sentiment": llm_score}
-    score = _keyword_sentiment(text)
-    logger.info(f"sentiment(kw): {score:.2f}")
-    return {"sentiment": round(score, 2)}
+        score = await _llm_sentiment(text)
+    if score is None:
+        score = _keyword_sentiment(text)
+    score = round(score, 2)
+
+    emotion = _emotion_label(text, score)
+    urgency = _urgency_level(text, score)
+    logger.info(f"sentiment={score:.2f} emotion={emotion} urgency={urgency}")
+    return {"sentiment": score, "emotion": emotion, "urgency": urgency}
 
 
 def next_best_action_node(state: SupervisorState) -> dict:
@@ -690,7 +762,27 @@ def next_best_action_node(state: SupervisorState) -> dict:
         )
     except Exception as e:
         logger.debug(f"escalation risk skipped: {e}")
-    return {"next_best_action": nba, "escalation_risk": risk}
+
+    life_events = _detect_life_events(state.get("text", ""))
+
+    # Autonomous Resolution (challenge Idea #5): the agent fully resolves simple, low-risk,
+    # informational turns end-to-end — no human, no follow-up needed. Status lookups and
+    # appreciations are inherently safe to auto-close; other intents must also be low-risk.
+    autonomous = (
+        not escalated
+        and intent in ("status_check", "appreciation")
+    ) or (
+        not escalated
+        and intent == "service_request"
+        and risk.get("band") == "low"
+        and not (state.get("housing_decision") or {}).get("recommendation") == "manual_review"
+    )
+    return {
+        "next_best_action": nba,
+        "escalation_risk": risk,
+        "life_events": life_events,
+        "autonomous": bool(autonomous),
+    }
 
 
 async def persist_turn_node(state: SupervisorState) -> dict:
@@ -738,7 +830,7 @@ async def persist_turn_node(state: SupervisorState) -> dict:
                          "message": text[:500], "case_number": case.get("case_number") if case else None}),
             ("Router", {"service": state.get("service"), "intent": state.get("intent"),
                         "confidence": state.get("confidence")}),
-            ("Sentiment", {"score": sentiment}),
+            ("Sentiment", {"score": sentiment, "emotion": state.get("emotion"), "urgency": state.get("urgency")}),
             ("Guardrails", {"pii_redacted": state.get("pii_redacted", False),
                             "policy_blocked": state.get("policy_blocked", False),
                             "block_reason": state.get("block_reason")}),
@@ -770,6 +862,30 @@ async def persist_turn_node(state: SupervisorState) -> dict:
                 summary=f"Escalated to co-pilot · {state.get('escalation_reason','')}",
                 user_id=user_id, user_name=state.get("user_name"), channel=channel,
             )
+
+        # Autonomous resolution: close pure-information turns end-to-end, no human needed.
+        if case and state.get("autonomous") and state.get("intent") == "status_check":
+            try:
+                from ..workers.crm import resolve_case_autonomously
+                resolve_case_autonomously(case["case_number"])
+                emit_activity(
+                    event_type="autonomous_resolution",
+                    summary=f"🤖 {case['case_number']} resolved autonomously · no human needed",
+                    user_id=user_id, user_name=state.get("user_name"), channel=channel,
+                    payload={"case_number": case["case_number"]},
+                )
+            except Exception as e:
+                logger.debug(f"autonomous resolve skipped: {e}")
+
+        # Life-event signals → proactive recommendation logged for the co-pilot.
+        for ev in state.get("life_events", []) or []:
+            emit_activity(
+                event_type="life_event",
+                summary=f"🎯 Life-event detected · {ev}",
+                user_id=user_id, user_name=state.get("user_name"), channel=channel,
+                payload={"recommendation": ev},
+            )
+
         if case:
             return {"case_number": case.get("case_number")}
     except Exception as e:
