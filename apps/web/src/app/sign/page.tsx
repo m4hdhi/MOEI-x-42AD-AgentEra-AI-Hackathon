@@ -1,30 +1,30 @@
 "use client";
 
 /**
- * Digital Human — Multi-modal Sign / gesture studio with continuous, voice-enabled chat.
+ * Digital Human — Multi-modal Sign-Language studio with continuous, voice-enabled chat.
  *
  * ONE camera + ONE pretrained model (Google MediaPipe Gesture Recognizer, tasks-vision) powers
- * THREE input modes the user picks between:
+ * THREE sign-detection modes the user picks between:
  *   1) Gestures   — 7 pretrained gestures → MOEI phrases (zero training, instant).
- *   2) Fingerspell — hand landmarks → finger pattern → letter (A–Z / Arabic), builds words.
- *   3) Type        — keyboard fallback, always works (no camera needed).
+ *   2) Word signs — hand-shape (finger pattern) → a whole MOEI word (zero setup, chart shown).
+ *   3) Fingerspell — finger pattern → letter (A–Z / Arabic), builds words; fist = space.
  *
- * The recognizer returns BOTH `gestures` and `landmarks`, so modes 1 & 2 share the same model.
- * All three feed ONE continuous, context-aware conversation with voice output. EN + AR toggle.
- * Fully client-side; video never leaves the device.
+ * The recognizer returns BOTH `gestures` and `landmarks`, so all three modes share one model.
+ * Everything feeds ONE continuous, context-aware conversation with voice output. EN + AR toggle.
+ * A small text box stays as a safety fallback. Fully client-side; video never leaves the device.
  *   Model: ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
-  Send, Trash2, Volume2, Camera as CamIcon, RotateCcw, MessageCircle, Hand, Keyboard,
-  Sparkles, SpellCheck,
+  Send, Trash2, Volume2, Camera as CamIcon, RotateCcw, MessageCircle, Hand,
+  Sparkles, SpellCheck, Hand as HandIcon, Keyboard,
 } from "lucide-react";
 import { API_URL } from "@/lib/utils";
 import { LoginGate } from "@/components/LoginGate";
 import type { UaePassSession } from "@/lib/auth";
 
-// ── Mode 1: pretrained-gesture → MOEI phrase dictionary (bilingual + emoji) ──
+// ── Mode 1: pretrained-gesture → MOEI phrase (bilingual + emoji) ──
 type Gesture = { key: string; emoji: string; en: string; ar: string };
 const GESTURES: Gesture[] = [
   { key: "Open_Palm",   emoji: "🖐️", en: "Hello",              ar: "مرحبا" },
@@ -37,8 +37,24 @@ const GESTURES: Gesture[] = [
 ];
 const GESTURE_BY_KEY = Object.fromEntries(GESTURES.map((g) => [g.key, g]));
 
-// ── Mode 2: finger-pattern → letter. Deterministic & self-documenting (chart shown). ──
-// pattern = [thumb,index,middle,ring,pinky] up/down. "00000" (fist) = space/commit word.
+// ── Mode 2: finger-pattern → whole MOEI word. Deterministic; finger chart shown. ──
+// pattern = [thumb,index,middle,ring,pinky] up/down.
+type Sign = { pattern: string; en: string; ar: string };
+const WORD_SIGNS: Sign[] = [
+  { pattern: "11111", en: "Hello",              ar: "مرحبا" },
+  { pattern: "00000", en: "Yes",                ar: "نعم" },
+  { pattern: "00001", en: "No",                 ar: "لا" },
+  { pattern: "10000", en: "Thank you",          ar: "شكرا" },
+  { pattern: "01000", en: "I need help",        ar: "أحتاج مساعدة" },
+  { pattern: "01100", en: "Check my status",    ar: "حالة طلبي" },
+  { pattern: "01110", en: "Housing",            ar: "السكن" },
+  { pattern: "11000", en: "I have a complaint", ar: "لدي شكوى" },
+  { pattern: "00011", en: "Electricity",        ar: "الكهرباء" },
+  { pattern: "10001", en: "Emergency",          ar: "طوارئ" },
+];
+const WORD_BY_PATTERN = Object.fromEntries(WORD_SIGNS.map((s) => [s.pattern, s]));
+
+// ── Mode 3: finger-pattern → letter. "00000" (fist) = space/commit word. ──
 const EN_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const AR_LETTERS = "ا ب ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك ل م ن ه و ي".split(" ");
 const ALPHABET: { pattern: string; en: string; ar: string }[] = AR_LETTERS.map((ar, i) => ({
@@ -48,24 +64,24 @@ const ALPHABET: { pattern: string; en: string; ar: string }[] = AR_LETTERS.map((
 }));
 const LETTER_BY_PATTERN = Object.fromEntries(ALPHABET.map((a) => [a.pattern, a]));
 
-const HOLD_GESTURE = 10;   // frames to commit a gesture (~0.5s)
+const HOLD = 10;           // frames to commit a gesture/word (~0.5s)
 const HOLD_LETTER = 8;     // frames to commit a letter
-const SPACE_FRAMES = 6;    // fist frames to commit a word
-const AUTOSEND_MS = 2500;  // pause auto-sends (gesture mode)
+const SPACE_FRAMES = 6;    // fist frames to commit a spelled word
+const AUTOSEND_MS = 2500;  // pause auto-sends (gesture / word modes)
 const MIN_SCORE = 0.5;
 
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm";
 const MODEL = "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task";
 const ESM = "https://esm.sh/@mediapipe/tasks-vision@0.10.18";
 
-type Mode = "gesture" | "spell" | "type";
+type Mode = "gesture" | "word" | "spell";
 type ChatMsg = { role: "user" | "assistant"; text: string; time: string };
 
 export default function SignPage() {
   return (
     <LoginGate
       title="Sign-Language Assistant"
-      subtitle="Gestures, fingerspelling, or text — one screen, continuous voice chat. Sign in with UAE PASS."
+      subtitle="Three sign-detection modes, one continuous voice chat. Sign in with UAE PASS."
     >
       {(session) => <SignExperience session={session} />}
     </LoginGate>
@@ -81,17 +97,17 @@ function SignExperience({ session }: { session: UaePassSession }) {
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState<"en" | "ar">("en");
   const [mode, setMode] = useState<Mode>("gesture");
-  const [status, setStatus] = useState("Loading gesture model…");
-  const [live, setLive] = useState<{ label: string; sub: string; score: number } | null>(null);
+  const [status, setStatus] = useState("Loading model…");
+  const [live, setLive] = useState<{ label: string; sub: string } | null>(null);
   const [hold, setHold] = useState(0);
   const [tokens, setTokens] = useState<string[]>([]);   // committed words/phrases (display text)
   const [letters, setLetters] = useState<string[]>([]); // current word being spelled
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [busy, setBusy] = useState(false);
   const [typed, setTyped] = useState("");
+  const [showType, setShowType] = useState(false);
   const [sessionId] = useState(() => "sign-" + (session.emirates_id || "anon") + "-" + Date.now());
 
-  // refs for the rAF loop / async send
   const tokensRef = useRef<string[]>([]);
   const lettersRef = useRef<string[]>([]);
   const lastAtRef = useRef(Date.now());
@@ -116,7 +132,6 @@ function SignExperience({ session }: { session: UaePassSession }) {
     return () => { console.error = orig; };
   }, []);
 
-  // ── send text to the assistant (continuous session) ──
   const send = useCallback(async (text: string) => {
     const t = text.trim();
     if (!t || busyRef.current) return;
@@ -146,7 +161,6 @@ function SignExperience({ session }: { session: UaePassSession }) {
     }
   }, [session.emirates_id, sessionId]);
 
-  // Build the outgoing text from committed tokens + any half-spelled word.
   const sendCurrent = useCallback(() => {
     const tail = lettersRef.current.join("");
     const all = [...tokensRef.current, ...(tail ? [tail] : [])];
@@ -162,24 +176,24 @@ function SignExperience({ session }: { session: UaePassSession }) {
     }
   }
 
-  // ── pause → auto-send (gesture mode only; spell uses the Send button) ──
+  // pause → auto-send (gesture + word modes; spell uses the Send button)
   useEffect(() => {
     const id = setInterval(() => {
-      if (modeRef.current === "gesture" && tokensRef.current.length > 0 && !busyRef.current && Date.now() - lastAtRef.current > AUTOSEND_MS) {
+      const m = modeRef.current;
+      if ((m === "gesture" || m === "word") && tokensRef.current.length > 0 && !busyRef.current && Date.now() - lastAtRef.current > AUTOSEND_MS) {
         sendCurrent();
       }
     }, 400);
     return () => clearInterval(id);
   }, [sendCurrent]);
 
-  // ── MediaPipe pretrained recognizer loop (gestures + landmarks) ──
+  // MediaPipe pretrained recognizer loop (gestures + landmarks)
   useEffect(() => {
     let recognizer: any, stream: MediaStream | null = null, raf = 0, cancelled = false;
     let lastVideoTime = -1;
-    // gesture commit state
-    let gKey = "", gHold = 0, gCommitted = false;
-    // letter commit state
-    let lPat = "", lHold = 0, lCommitted = false, fistFrames = 0;
+    let gKey = "", gHold = 0, gCommitted = false;       // gesture
+    let wPat = "", wHold = 0, wCommitted = false;        // word sign
+    let lPat = "", lHold = 0, lCommitted = false, fistFrames = 0; // letter
 
     function fingersUp(lm: any[]): string {
       const up = (tip: number, pip: number) => (lm[tip].y < lm[pip].y ? "1" : "0");
@@ -207,8 +221,9 @@ function SignExperience({ session }: { session: UaePassSession }) {
         setStatus("Ready");
         loop();
       } catch {
-        setError("Could not load the model or camera. Allow camera access and use Chrome/Edge — or use Type mode below.");
-        setStatus("Camera unavailable — use Type mode");
+        setError("Could not load the model or camera. Allow camera access and use Chrome/Edge — or use the text box.");
+        setStatus("Camera unavailable — use the text box");
+        setShowType(true);
       }
     }
 
@@ -231,50 +246,64 @@ function SignExperience({ session }: { session: UaePassSession }) {
               for (const p of lms) { ctx.beginPath(); ctx.arc(p.x * cv.width, p.y * cv.height, 3, 0, 6.28); ctx.fill(); }
             }
 
-            const m = modeRef.current;
+            const m = modeRef.current, lang = langRef.current;
+
             if (m === "gesture") {
               const g = res?.gestures?.[0]?.[0];
               const key = g?.categoryName, score = g?.score ?? 0;
               if (key && key !== "None" && key !== "Unknown" && GESTURE_BY_KEY[key] && score >= MIN_SCORE) {
                 const gi = GESTURE_BY_KEY[key];
-                setLive({ label: `${gi.emoji} ${gi[langRef.current]}`, sub: `${Math.round(score * 100)}%`, score });
+                setLive({ label: `${gi.emoji} ${gi[lang]}`, sub: `${Math.round(score * 100)}%` });
                 if (key === gKey) {
                   gHold++; setHold(gHold);
-                  if (gHold >= HOLD_GESTURE && !gCommitted) {
-                    gCommitted = true;
-                    setTokens((t) => [...t, gi[langRef.current]]);
-                    lastAtRef.current = Date.now();
-                    setStatus(`Added: ${gi.en}`);
+                  if (gHold >= HOLD && !gCommitted) {
+                    gCommitted = true; setTokens((t) => [...t, gi[lang]]);
+                    lastAtRef.current = Date.now(); setStatus(`Added: ${gi.en}`);
                   }
                 } else { gKey = key; gHold = 0; gCommitted = false; setHold(0); }
               } else { setLive(null); gKey = ""; gHold = 0; gCommitted = false; setHold(0); }
+
+            } else if (m === "word") {
+              if (lms) {
+                const pat = fingersUp(lms);
+                const s = WORD_BY_PATTERN[pat];
+                if (s) {
+                  setLive({ label: s[lang], sub: pat });
+                  if (pat === wPat) {
+                    wHold++; setHold(wHold);
+                    if (wHold >= HOLD && !wCommitted) {
+                      wCommitted = true; setTokens((t) => [...t, s[lang]]);
+                      lastAtRef.current = Date.now(); setStatus(`Added: ${s.en}`);
+                    }
+                  } else { wPat = pat; wHold = 0; wCommitted = false; setHold(0); }
+                } else { setLive(null); wPat = ""; wHold = 0; wCommitted = false; setHold(0); }
+              } else { setLive(null); wPat = ""; wHold = 0; wCommitted = false; setHold(0); }
+
             } else if (m === "spell") {
               if (lms) {
                 const pat = fingersUp(lms);
-                if (pat === "00000") { // fist = space / commit current word
+                if (pat === "00000") {
                   fistFrames++;
-                  setLive({ label: "✊ space", sub: "commit word", score: 1 });
+                  setLive({ label: "✊ space", sub: "commit word" });
                   if (fistFrames >= SPACE_FRAMES) {
                     if (lettersRef.current.length) {
                       const w = lettersRef.current.join("");
                       setTokens((t) => [...t, w]); setLetters([]);
                       lastAtRef.current = Date.now(); setStatus(`Word: ${w}`);
                     }
-                    fistFrames = -999; // require release before next space
+                    fistFrames = -999;
                   }
                   lPat = ""; lHold = 0; lCommitted = false; setHold(0);
                 } else {
                   fistFrames = 0;
                   const entry = LETTER_BY_PATTERN[pat];
-                  const ch = entry ? entry[langRef.current] : "";
+                  const ch = entry ? entry[lang] : "";
                   if (ch) {
-                    setLive({ label: ch, sub: pat, score: 1 });
+                    setLive({ label: ch, sub: pat });
                     if (pat === lPat) {
                       lHold++; setHold(lHold);
                       if (lHold >= HOLD_LETTER && !lCommitted) {
-                        lCommitted = true;
-                        setLetters((l) => [...l, ch]);
-                        setStatus(`Letter: ${ch}`);
+                        lCommitted = true; setLetters((l) => [...l, ch]); setStatus(`Letter: ${ch}`);
                       }
                     } else { lPat = pat; lHold = 0; lCommitted = false; setHold(0); }
                   } else { setLive(null); lPat = ""; lHold = 0; lCommitted = false; setHold(0); }
@@ -297,6 +326,7 @@ function SignExperience({ session }: { session: UaePassSession }) {
   }, []);
 
   const draftText = [...tokens, ...(letters.length ? [letters.join("")] : [])];
+  const holdMax = mode === "spell" ? HOLD_LETTER : HOLD;
 
   return (
     <div className="bg-moei-cream/30 min-h-screen flex flex-col">
@@ -308,7 +338,7 @@ function SignExperience({ session }: { session: UaePassSession }) {
               <span className="moei-kicker">Accessibility · Digital Human</span>
               <h1 className="mt-1 moei-h-section">Multi-modal Sign Studio</h1>
               <p className="mt-1 max-w-2xl text-sm text-moei-body">
-                Choose how to communicate — pretrained gestures, fingerspelling, or text — all in one
+                Three ways to sign — pretrained gestures, whole-word signs, or fingerspelling — all in one
                 continuous, voice-enabled conversation. English (ASL) + Arabic (ArSL).
               </p>
             </div>
@@ -322,12 +352,12 @@ function SignExperience({ session }: { session: UaePassSession }) {
             </div>
           </div>
 
-          {/* mode selector */}
+          {/* mode selector — three sign-detection tabs */}
           <div className="mt-4 inline-flex flex-wrap rounded-xl border border-moei-line bg-moei-cream/40 p-1">
             {([
-              { k: "gesture", icon: Sparkles, label: "Gestures", hint: "pretrained" },
-              { k: "spell", icon: SpellCheck, label: "Fingerspell", hint: "A–Z / أ–ي" },
-              { k: "type", icon: Keyboard, label: "Type", hint: "always works" },
+              { k: "gesture", icon: Sparkles, label: "Gestures", hint: "pretrained AI" },
+              { k: "word", icon: HandIcon, label: "Word signs", hint: "sign → word" },
+              { k: "spell", icon: SpellCheck, label: "Fingerspell", hint: "sign → letters" },
             ] as const).map(({ k, icon: Icon, label, hint }) => (
               <button
                 key={k}
@@ -346,87 +376,83 @@ function SignExperience({ session }: { session: UaePassSession }) {
 
       <section className="flex-1 mx-auto max-w-7xl px-6 py-6 w-full">
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* left: camera (gesture/spell) or big text box (type) + draft */}
+          {/* left: camera + draft */}
           <div className="lg:col-span-2 space-y-4">
-            {mode !== "type" ? (
-              <div className="rounded-2xl border border-moei-line bg-white p-4">
-                <div className="relative overflow-hidden rounded-xl bg-slate-900" style={{ aspectRatio: "4/3" }}>
-                  <video ref={videoRef} className="hidden" playsInline muted />
-                  <canvas ref={canvasRef} width={540} height={405} className="h-full w-full -scale-x-100" />
-                  {!ready && !error && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
-                      <CamIcon className="animate-pulse" size={32} />
-                      <p className="mt-3 text-sm">Loading Google gesture model…</p>
+            <div className="rounded-2xl border border-moei-line bg-white p-4">
+              <div className="relative overflow-hidden rounded-xl bg-slate-900" style={{ aspectRatio: "4/3" }}>
+                <video ref={videoRef} className="hidden" playsInline muted />
+                <canvas ref={canvasRef} width={540} height={405} className="h-full w-full -scale-x-100" />
+                {!ready && !error && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
+                    <CamIcon className="animate-pulse" size={32} />
+                    <p className="mt-3 text-sm">Loading Google gesture model…</p>
+                  </div>
+                )}
+                {error && (
+                  <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-amber-200">{error}</div>
+                )}
+                {live && (
+                  <div className="absolute left-3 top-3 rounded-full bg-emerald-600 px-4 py-2 text-base font-bold text-white shadow-lg">
+                    {live.label} {live.sub && <span className="text-white/80 text-sm">· {live.sub}</span>}
+                  </div>
+                )}
+                {live && (
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <div className="h-2 overflow-hidden rounded-full bg-white/30">
+                      <div className="h-full bg-emerald-400 transition-all" style={{ width: `${Math.min(100, (hold / holdMax) * 100)}%` }} />
                     </div>
-                  )}
-                  {error && (
-                    <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-amber-200">{error}</div>
-                  )}
-                  {live && (
-                    <div className="absolute left-3 top-3 rounded-full bg-emerald-600 px-4 py-2 text-base font-bold text-white shadow-lg">
-                      {live.label} {live.sub && <span className="text-white/80 text-sm">· {live.sub}</span>}
-                    </div>
-                  )}
-                  {live && (
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <div className="h-2 overflow-hidden rounded-full bg-white/30">
-                        <div className="h-full bg-emerald-400 transition-all" style={{ width: `${Math.min(100, (hold / (mode === "gesture" ? HOLD_GESTURE : HOLD_LETTER)) * 100)}%` }} />
-                      </div>
-                      <p className="mt-1 text-xs text-white/80">{mode === "gesture" ? "Hold the gesture to add it…" : "Hold to add the letter · fist = space"}</p>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-3 text-xs">
-                  <span className="text-moei-muted">Google MediaPipe (pretrained) · runs locally, no video leaves device</span>
-                  <span className="font-semibold text-emerald-700">{status}</span>
-                </div>
+                    <p className="mt-1 text-xs text-white/80">
+                      {mode === "gesture" ? "Hold the gesture to add it…" : mode === "word" ? "Hold the sign to add the word…" : "Hold to add the letter · fist = space"}
+                    </p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="rounded-2xl border border-moei-line bg-white p-4">
-                <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-moei-muted">
-                  <Keyboard size={13} /> Type your message
-                </div>
-                <form onSubmit={(e) => { e.preventDefault(); const v = typed; setTyped(""); send(v); }} className="flex gap-2">
-                  <input
-                    value={typed} onChange={(e) => setTyped(e.target.value)} autoFocus
-                    placeholder={language === "ar" ? "اكتب رسالتك…" : "Type your message…"}
-                    dir={language === "ar" ? "rtl" : "ltr"}
-                    className="flex-1 rounded-lg border border-moei-line bg-white px-3 py-3 text-sm outline-none focus:border-moei-bronze"
-                  />
-                  <button type="submit" disabled={busy || !typed.trim()} className="moei-btn-primary justify-center disabled:opacity-50">
-                    <Send size={14} /> Send
-                  </button>
-                </form>
-                <p className="mt-2 text-[11px] text-moei-muted">Text always works — no camera needed. Great fallback if signing is hard to see.</p>
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                <span className="text-moei-muted">Google MediaPipe (pretrained) · runs locally, no video leaves device</span>
+                <span className="font-semibold text-emerald-700">{status}</span>
               </div>
-            )}
+            </div>
 
-            {/* draft / message being built (gesture + spell) */}
-            {mode !== "type" && (
-              <div className="rounded-2xl border border-moei-line bg-white p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-moei-muted">Your message</span>
+            {/* draft / message being built */}
+            <div className="rounded-2xl border border-moei-line bg-white p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-moei-muted">Your message</span>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setShowType((v) => !v)} className="text-moei-muted hover:text-moei-bronze" title="Type instead (fallback)"><Keyboard size={14} /></button>
                   <button onClick={() => { setTokens([]); setLetters([]); }} className="text-moei-muted hover:text-red-600" aria-label="Clear"><Trash2 size={14} /></button>
                 </div>
-                <div className="min-h-[52px] rounded-lg border border-moei-line bg-moei-cream/30 px-3 py-2 flex flex-wrap gap-2 items-center" dir={language === "ar" ? "rtl" : "ltr"}>
-                  {draftText.length ? draftText.map((w, i) => (
-                    <span key={i} className={`rounded-full px-3 py-1 text-sm font-semibold ${i === tokens.length && letters.length ? "bg-emerald-100 border border-emerald-300 text-emerald-800" : "bg-moei-bronze/10 border border-moei-bronze/30 text-moei-ink"}`}>
-                      {w}
-                    </span>
-                  )) : <span className="text-moei-muted text-sm">{mode === "gesture" ? "Gesture to build your message — pause 2.5s to send." : "Fingerspell letters · fist = space · then Send."}</span>}
-                </div>
-                <button onClick={sendCurrent} disabled={busy || draftText.length === 0} className="moei-btn-primary mt-3 w-full justify-center disabled:opacity-50">
-                  <Send size={14} /> {busy ? "Sending…" : mode === "gesture" ? "Send now (or pause to auto-send)" : "Send"}
-                </button>
               </div>
-            )}
+              <div className="min-h-[52px] rounded-lg border border-moei-line bg-moei-cream/30 px-3 py-2 flex flex-wrap gap-2 items-center" dir={language === "ar" ? "rtl" : "ltr"}>
+                {draftText.length ? draftText.map((w, i) => (
+                  <span key={i} className={`rounded-full px-3 py-1 text-sm font-semibold ${i === tokens.length && letters.length ? "bg-emerald-100 border border-emerald-300 text-emerald-800" : "bg-moei-bronze/10 border border-moei-bronze/30 text-moei-ink"}`}>
+                    {w}
+                  </span>
+                )) : <span className="text-moei-muted text-sm">{mode === "spell" ? "Fingerspell letters · fist = space · then Send." : "Sign to build your message — pause 2.5s to send."}</span>}
+              </div>
+              <button onClick={sendCurrent} disabled={busy || draftText.length === 0} className="moei-btn-primary mt-3 w-full justify-center disabled:opacity-50">
+                <Send size={14} /> {busy ? "Sending…" : mode === "spell" ? "Send" : "Send now (or pause to auto-send)"}
+              </button>
+
+              {/* discreet text fallback */}
+              {showType && (
+                <form onSubmit={(e) => { e.preventDefault(); const v = typed; setTyped(""); send(v); }} className="mt-3 flex gap-2 border-t border-moei-line pt-3">
+                  <input
+                    value={typed} onChange={(e) => setTyped(e.target.value)}
+                    placeholder={language === "ar" ? "أو اكتب…" : "Or type…"}
+                    dir={language === "ar" ? "rtl" : "ltr"}
+                    className="flex-1 rounded-lg border border-moei-line bg-white px-3 py-2 text-sm outline-none focus:border-moei-bronze"
+                  />
+                  <button type="submit" disabled={busy || !typed.trim()} className="moei-btn-secondary disabled:opacity-50"><Send size={14} /></button>
+                </form>
+              )}
+            </div>
           </div>
 
-          {/* right: contextual help (dictionary / chart / tips) + conversation */}
+          {/* right: contextual chart + conversation */}
           <div className="space-y-4">
             <div className="rounded-2xl border border-moei-line bg-white p-4">
               <div className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-moei-muted">
-                <Hand size={13} /> {mode === "gesture" ? "Gesture dictionary" : mode === "spell" ? "Fingerspelling chart" : "Tips"}
+                <Hand size={13} /> {mode === "gesture" ? "Gesture dictionary" : mode === "word" ? "Word-sign chart" : "Fingerspelling chart"}
               </div>
 
               {mode === "gesture" && (
@@ -443,6 +469,20 @@ function SignExperience({ session }: { session: UaePassSession }) {
                 </div>
               )}
 
+              {mode === "word" && (
+                <div className="grid grid-cols-1 gap-1.5 max-h-[300px] overflow-y-auto">
+                  {WORD_SIGNS.map((s) => (
+                    <div key={s.pattern} className="flex items-center justify-between gap-2 rounded-lg border border-moei-line px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold text-moei-ink truncate">{s[language]}</div>
+                        <div className="text-[11px] text-moei-muted truncate">{language === "en" ? s.ar : s.en}</div>
+                      </div>
+                      <FingerDots pattern={s.pattern} />
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {mode === "spell" && (
                 <div className="grid grid-cols-2 gap-1.5 max-h-[300px] overflow-y-auto">
                   {ALPHABET.map((a) => (
@@ -454,19 +494,12 @@ function SignExperience({ session }: { session: UaePassSession }) {
                 </div>
               )}
 
-              {mode === "type" && (
-                <p className="text-[12px] text-moei-body leading-relaxed">
-                  Just type and press Send. This mode needs no camera and is the most reliable for noisy
-                  rooms or poor lighting. The assistant keeps the same conversation across all modes.
-                </p>
-              )}
-
               <div className="mt-3 rounded-lg bg-moei-cream/40 p-2.5 text-[11px] text-moei-body leading-relaxed">
                 <strong>For judges:</strong> {mode === "gesture"
-                  ? "Make any gesture (hold ½s) — it adds the phrase. Chain a few, pause, the assistant replies with voice. No training — Google's pretrained model."
-                  : mode === "spell"
-                  ? "Raise the fingers shown for a letter (filled dot = finger up), hold ½s. Make a fist for a space. Then Send."
-                  : "Type anything — always works."} Use the <strong>{language === "en" ? "العربية" : "English"}</strong> toggle for the other language.
+                  ? "Make any gesture (hold ½s) — Google's pretrained model adds the phrase. Chain a few, pause, the assistant replies with voice."
+                  : mode === "word"
+                  ? "Raise the fingers shown (filled dot = finger up), hold ½s — it adds the whole word. Pause to send."
+                  : "Raise the fingers shown for a letter, hold ½s. Make a fist for a space. Then Send."} Use the <strong>{language === "en" ? "العربية" : "English"}</strong> toggle for the other language.
               </div>
             </div>
 
@@ -478,7 +511,7 @@ function SignExperience({ session }: { session: UaePassSession }) {
               </div>
               <div className="space-y-3 max-h-[300px] overflow-y-auto">
                 {messages.length === 0 ? (
-                  <p className="text-xs text-moei-muted text-center py-6">Gesture, spell, or type to start…</p>
+                  <p className="text-xs text-moei-muted text-center py-6">Sign to start the conversation…</p>
                 ) : messages.map((m, i) => (
                   <div key={i} className={`text-xs p-2.5 rounded-lg ${m.role === "user" ? "bg-moei-bronze/10 border border-moei-bronze/30 text-moei-ink" : "bg-emerald-50 border border-emerald-200 text-emerald-900"}`}>
                     <div className="flex items-center justify-between mb-1">
@@ -503,10 +536,10 @@ function SignExperience({ session }: { session: UaePassSession }) {
   );
 }
 
-// Small 5-dot finger indicator [thumb,index,middle,ring,pinky] — filled = raise that finger.
+// 5-dot finger indicator [thumb,index,middle,ring,pinky] — filled = raise that finger.
 function FingerDots({ pattern }: { pattern: string }) {
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-0.5 shrink-0" title="thumb · index · middle · ring · pinky">
       {pattern.split("").map((b, i) => (
         <span key={i} className={`h-2.5 w-2.5 rounded-full border ${b === "1" ? "bg-moei-bronze border-moei-bronze" : "bg-transparent border-moei-line"}`} />
       ))}
