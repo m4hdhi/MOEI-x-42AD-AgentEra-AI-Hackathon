@@ -64,3 +64,6 @@ uaepass/
 # Stray root-level docs/images (not app code)
 Claude.pdf
 *.avif
+
+# Local AI/editor tooling config
+.claude/
