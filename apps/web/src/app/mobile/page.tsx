@@ -9,7 +9,10 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Send, Smartphone, MoreVertical, Bell, Home, User } from "lucide-react";
+import {
+  ArrowLeft, Send, Sparkles, MoreVertical, Bell, Home, User, Smartphone,
+  MessageCircle, Mic, Globe,
+} from "lucide-react";
 import { API_URL } from "@/lib/utils";
 import { LoginGate } from "@/components/LoginGate";
 import type { UaePassSession } from "@/lib/auth";
@@ -17,14 +20,23 @@ import type { UaePassSession } from "@/lib/auth";
 type Msg = {
   role: "user" | "assistant";
   text: string;
+  channel?: string;
   citations?: { title: string; url: string }[];
 };
 
 const PROMPTS = [
-  "Status of my SZHP application",
+  "Status of my housing application",
   "Renew my boat registration",
   "Report a power outage in my area",
 ];
+
+// Small label + icon for messages that arrived on another channel (cross-channel continuity).
+const CHANNEL_META: Record<string, { label: string; Icon: typeof Globe }> = {
+  whatsapp: { label: "WhatsApp", Icon: MessageCircle },
+  voice: { label: "Call", Icon: Mic },
+  web: { label: "Web", Icon: Globe },
+  mobile: { label: "App", Icon: Smartphone },
+};
 
 export default function MobilePage() {
   return (
@@ -41,6 +53,7 @@ function MobileExperience({ session }: { session: UaePassSession }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resumed, setResumed] = useState(false);
   const [sessionId] = useState(() => crypto.randomUUID());
   const userId = session.emirates_id || "anonymous";
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -49,11 +62,29 @@ function MobileExperience({ session }: { session: UaePassSession }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Resume the conversation: pull the customer's recent turns from EVERY channel so the
+  // thread continues where they left off (WhatsApp / call / web), not a blank screen.
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`${API_URL}/chat/history?n=20`, { credentials: "include" });
+        const d = await r.json();
+        const turns: Msg[] = (d.turns || []).map((t: any) => ({
+          role: t.role, text: t.text, channel: t.channel,
+        }));
+        if (turns.length) {
+          setMessages(turns);
+          setResumed(turns.some((t) => t.channel && t.channel !== "mobile"));
+        }
+      } catch { /* offline-safe */ }
+    })();
+  }, []);
+
   async function send(textOverride?: string) {
     const text = (textOverride ?? input).trim();
     if (!text || busy) return;
     setInput("");
-    setMessages((m) => [...m, { role: "user", text }]);
+    setMessages((m) => [...m, { role: "user", text, channel: "mobile" }]);
     setBusy(true);
     try {
       const res = await fetch(`${API_URL}/chat/web`, {
@@ -71,7 +102,7 @@ function MobileExperience({ session }: { session: UaePassSession }) {
       const data = await res.json();
       setMessages((m) => [
         ...m,
-        { role: "assistant", text: data.text, citations: data.citations ?? [] },
+        { role: "assistant", text: data.text, channel: "mobile", citations: data.citations ?? [] },
       ]);
     } catch (e) {
       setMessages((m) => [...m, { role: "assistant", text: `Connection error: ${String(e)}` }]);
@@ -102,39 +133,56 @@ function MobileExperience({ session }: { session: UaePassSession }) {
               </span>
             </div>
             {/* App bar */}
-            <div className="flex items-center justify-between border-b border-moei-line bg-white px-4 py-3">
-              <button className="text-moei-ink"><ArrowLeft size={18} /></button>
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-moei-cream">
-                  <Smartphone size={14} className="text-moei-bronze" />
+            <div className="flex items-center justify-between border-b border-moei-line bg-white px-4 py-2.5">
+              <button className="text-moei-muted hover:text-moei-ink" aria-label="Back"><ArrowLeft size={18} /></button>
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-moei-bronze to-moei-bronze-dark shadow-sm">
+                  <Sparkles size={16} className="text-white" />
                 </span>
-                <div>
-                  <div className="text-[13px] font-bold text-moei-ink">Smart Assistant</div>
-                  <div className="text-[9px] text-moei-bronze">Ministry of Energy and Infrastructure</div>
+                <div className="leading-tight">
+                  <div className="flex items-center gap-1.5 text-[13px] font-bold text-moei-ink">
+                    Smart Assistant
+                    <span className="flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-px text-[8px] font-semibold text-emerald-600">
+                      <span className="h-1 w-1 rounded-full bg-emerald-500" /> Online
+                    </span>
+                  </div>
+                  <div className="text-[9px] text-moei-muted">Ministry of Energy &amp; Infrastructure</div>
                 </div>
               </div>
-              <button className="text-moei-ink"><MoreVertical size={18} /></button>
+              <button className="text-moei-muted hover:text-moei-ink" aria-label="Menu"><MoreVertical size={18} /></button>
             </div>
 
             {/* Chat area */}
             <div className="h-[460px] overflow-y-auto bg-moei-cream/20 px-3 py-4">
               {messages.length === 0 && (
-                <div className="px-2 pt-4 text-center">
-                  <Smartphone className="mx-auto text-moei-bronze" size={28} />
-                  <p className="mt-2 text-xs text-moei-body">
-                    Welcome{session.first_name_en ? `, ${session.first_name_en}` : ""}. How can I help with your ministry services today?
+                <div className="px-2 pt-6 text-center">
+                  <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-moei-bronze to-moei-bronze-dark shadow-md">
+                    <Sparkles className="text-white" size={24} />
+                  </span>
+                  <p className="mt-3 text-sm font-semibold text-moei-ink">
+                    Hello{session.first_name_en ? `, ${session.first_name_en}` : ""} 👋
+                  </p>
+                  <p className="mt-1 text-xs text-moei-muted">
+                    How can I help with your ministry services today?
                   </p>
                   <div className="mt-4 space-y-2">
                     {PROMPTS.map((p) => (
                       <button
                         key={p}
                         onClick={() => send(p)}
-                        className="block w-full rounded-2xl border border-moei-line bg-white px-3 py-2 text-left text-[12px] text-moei-body shadow-sm hover:border-moei-bronze"
+                        className="block w-full rounded-2xl border border-moei-line bg-white px-3 py-2.5 text-left text-[12px] text-moei-body shadow-sm transition hover:border-moei-bronze hover:bg-moei-cream/30"
                       >
                         {p}
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Cross-channel resume banner */}
+              {resumed && messages.length > 0 && (
+                <div className="mx-2 mb-3 flex items-center justify-center gap-1.5 rounded-full bg-moei-cream/60 px-3 py-1.5 text-[10px] text-moei-bronze">
+                  <Sparkles size={11} /> Continuing your conversation across channels
                 </div>
               )}
               <div className="space-y-2">
@@ -143,9 +191,15 @@ function MobileExperience({ session }: { session: UaePassSession }) {
                   const cleanText = hasCit
                     ? m.text.replace(/\n+\*\*(?:More info|أكثر):\*\*.*$/s, "").trim()
                     : m.text;
+                  const otherChannel = m.channel && m.channel !== "mobile" ? CHANNEL_META[m.channel] : null;
                   return (
                     <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
                       <div className="max-w-[80%]">
+                        {otherChannel && (
+                          <div className={"mb-0.5 flex items-center gap-1 text-[9px] text-moei-muted " + (m.role === "user" ? "justify-end" : "justify-start")}>
+                            <otherChannel.Icon size={9} /> via {otherChannel.label}
+                          </div>
+                        )}
                         <div
                           dir={/[؀-ۿ]/.test(m.text) ? "rtl" : "ltr"}
                           className={
@@ -203,7 +257,7 @@ function MobileExperience({ session }: { session: UaePassSession }) {
             <div className="flex items-center justify-around border-t border-moei-line bg-white px-4 py-2">
               <Tab icon={Home} label="Home" />
               <Tab icon={Bell} label="Alerts" />
-              <Tab icon={Smartphone} label="Assistant" active />
+              <Tab icon={Sparkles} label="Assistant" active />
               <Tab icon={User} label="Account" />
             </div>
           </div>

@@ -12,6 +12,26 @@ from ..schemas.message import AgentResponse, IncomingMessage
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+@router.get("/history")
+async def chat_history(request: Request, user_id: str | None = None, n: int = 20) -> dict:
+    """Return the customer's recent conversation across EVERY channel, keyed by their identity.
+
+    This is what lets a conversation continue seamlessly: the web/app surfaces load this on open,
+    so a customer who started on WhatsApp or a call sees the same thread when they switch device —
+    they never start over or repeat themselves.
+    """
+    from hassan.memory.short_term import get_short_term_buffer
+
+    uid = get_authenticated_user_id(request) or user_id
+    if not uid:
+        return {"user_id": None, "turns": []}
+    try:
+        turns = await get_short_term_buffer().recent(uid, max(1, min(n, 50)))
+    except Exception:
+        turns = []
+    return {"user_id": uid, "turns": turns}
+
+
 @router.post("/web", response_model=AgentResponse)
 async def chat_web(msg: IncomingMessage, request: Request) -> AgentResponse:
     """Web channel ingress — synchronous JSON response. Prefers the UAE PASS session user_id."""

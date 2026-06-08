@@ -78,7 +78,9 @@ def upsert_case(
     """
     if not _DB_AVAILABLE:
         return None
-    if intent in ("smalltalk", "out_of_scope"):
+    # Status checks are reads, not new requests — don't spawn a case for them. Smalltalk/out-of-scope
+    # likewise. (A status check that has no service context would otherwise create a junk 'Unknown' case.)
+    if intent in ("smalltalk", "out_of_scope", "status_check"):
         return None
     try:
         priority = _priority(intent, sentiment, escalated)

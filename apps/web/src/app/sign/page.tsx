@@ -97,7 +97,7 @@ function SignExperience({ session }: { session: UaePassSession }) {
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState<"en" | "ar">("en");
   const [mode, setMode] = useState<Mode>("gesture");
-  const [status, setStatus] = useState("Loading model…");
+  const [status, setStatus] = useState("Starting camera…");
   const [live, setLive] = useState<{ label: string; sub: string } | null>(null);
   const [hold, setHold] = useState(0);
   const [tokens, setTokens] = useState<string[]>([]);   // committed words/phrases (display text)
@@ -221,8 +221,8 @@ function SignExperience({ session }: { session: UaePassSession }) {
         setStatus("Ready");
         loop();
       } catch {
-        setError("Could not load the model or camera. Allow camera access and use Chrome/Edge — or use the text box.");
-        setStatus("Camera unavailable — use the text box");
+        setError("We couldn't start your camera. Please allow camera access (Chrome or Edge work best) — or type your message instead.");
+        setStatus("Camera unavailable — type instead");
         setShowType(true);
       }
     }
@@ -335,11 +335,11 @@ function SignExperience({ session }: { session: UaePassSession }) {
         <div className="mx-auto max-w-7xl px-6 py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <span className="moei-kicker">Accessibility · Digital Human</span>
-              <h1 className="mt-1 moei-h-section">Multi-modal Sign Studio</h1>
+              <span className="moei-kicker">Accessibility · Sign Language</span>
+              <h1 className="mt-1 moei-h-section">Sign Language Assistant</h1>
               <p className="mt-1 max-w-2xl text-sm text-moei-body">
-                Three ways to sign — pretrained gestures, whole-word signs, or fingerspelling — all in one
-                continuous, voice-enabled conversation. English (ASL) + Arabic (ArSL).
+                Three ways to sign — quick gestures, whole-word signs, or fingerspelling — all in one
+                continuous conversation that replies in text and voice. English and Arabic.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -355,7 +355,7 @@ function SignExperience({ session }: { session: UaePassSession }) {
           {/* mode selector — three sign-detection tabs */}
           <div className="mt-4 inline-flex flex-wrap rounded-xl border border-moei-line bg-moei-cream/40 p-1">
             {([
-              { k: "gesture", icon: Sparkles, label: "Gestures", hint: "pretrained AI" },
+              { k: "gesture", icon: Sparkles, label: "Gestures", hint: "instant" },
               { k: "word", icon: HandIcon, label: "Word signs", hint: "sign → word" },
               { k: "spell", icon: SpellCheck, label: "Fingerspell", hint: "sign → letters" },
             ] as const).map(({ k, icon: Icon, label, hint }) => (
@@ -385,7 +385,7 @@ function SignExperience({ session }: { session: UaePassSession }) {
                 {!ready && !error && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
                     <CamIcon className="animate-pulse" size={32} />
-                    <p className="mt-3 text-sm">Loading Google gesture model…</p>
+                    <p className="mt-3 text-sm">Starting your camera…</p>
                   </div>
                 )}
                 {error && (
@@ -408,7 +408,7 @@ function SignExperience({ session }: { session: UaePassSession }) {
                 )}
               </div>
               <div className="mt-2 flex items-center justify-between gap-3 text-xs">
-                <span className="text-moei-muted">Google MediaPipe (pretrained) · runs locally, no video leaves device</span>
+                <span className="text-moei-muted">Runs privately on your device — your camera never leaves it.</span>
                 <span className="font-semibold text-emerald-700">{status}</span>
               </div>
             </div>
@@ -495,11 +495,11 @@ function SignExperience({ session }: { session: UaePassSession }) {
               )}
 
               <div className="mt-3 rounded-lg bg-moei-cream/40 p-2.5 text-[11px] text-moei-body leading-relaxed">
-                <strong>For judges:</strong> {mode === "gesture"
-                  ? "Make any gesture (hold ½s) — Google's pretrained model adds the phrase. Chain a few, pause, the assistant replies with voice."
+                <strong>How to use:</strong> {mode === "gesture"
+                  ? "Make any gesture and hold it briefly — it adds the phrase. Chain a few, pause, and the assistant replies in text and voice."
                   : mode === "word"
-                  ? "Raise the fingers shown (filled dot = finger up), hold ½s — it adds the whole word. Pause to send."
-                  : "Raise the fingers shown for a letter, hold ½s. Make a fist for a space. Then Send."} Use the <strong>{language === "en" ? "العربية" : "English"}</strong> toggle for the other language.
+                  ? "Raise the fingers shown (filled dot = finger up) and hold briefly — it adds the whole word. Pause to send."
+                  : "Raise the fingers shown for a letter and hold briefly. Make a fist for a space, then Send."} Use the <strong>{language === "en" ? "العربية" : "English"}</strong> toggle for the other language.
               </div>
             </div>
 

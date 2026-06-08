@@ -21,6 +21,7 @@ type Msg = {
   citations?: { title: string; url: string; source?: string }[];
   escalationRisk?: { risk: number; band: string; factors: string[]; model: string };
   correlationId?: string;
+  channel?: string;
   streaming?: boolean;
 };
 
@@ -74,6 +75,21 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
     fetch(`${API_URL}/crm/citizens/${encodeURIComponent(userId)}/recommendations`)
       .then((r) => r.json()).then((d) => setRecs(d.recommendations || [])).catch(() => {});
   }, [userId]);
+
+  // Resume the conversation from every channel so it continues where the customer left off.
+  const [resumed, setResumed] = useState(false);
+  useEffect(() => {
+    fetch(`${API_URL}/chat/history?n=20`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        const turns: Msg[] = (d.turns || []).map((t: any) => ({ role: t.role, text: t.text, channel: t.channel }));
+        if (turns.length) {
+          setMessages(turns);
+          setResumed(turns.some((t) => t.channel && t.channel !== "web"));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -359,6 +375,11 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+                {resumed && messages.length > 0 && (
+                  <div className="mx-auto mb-4 flex w-fit items-center gap-1.5 rounded-full bg-moei-cream/60 px-3 py-1 text-[11px] text-moei-bronze">
+                    <Sparkles size={12} /> Continuing your conversation from another channel
                   </div>
                 )}
                 <div className="space-y-4">

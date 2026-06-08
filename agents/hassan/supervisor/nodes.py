@@ -7,7 +7,9 @@ but the graph shape is locked so Langfuse traces look correct from now on.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
+from datetime import datetime, timezone
 
 from loguru import logger
 
@@ -290,6 +292,87 @@ def policy_guardrails_node(state: SupervisorState) -> dict:
     }
 
 
+def _lookup_open_cases(user_id: str) -> list[dict]:
+    """Fetch the customer's live cases (most recent first) so status checks are answered with
+    real data, not a generic 'we'll look into it'. Best-effort — empty list if DB is down."""
+    if not user_id:
+        return []
+    try:
+        import sys
+        from pathlib import Path
+        _api = Path(__file__).resolve().parents[3] / "apps" / "api"
+        if str(_api) not in sys.path:
+            sys.path.insert(0, str(_api))
+        from app.core.db import db_cursor  # type: ignore[import-not-found]
+
+        with db_cursor() as cur:
+            cur.execute(
+                """SELECT case_number, service, service_category, sub_service, status, priority,
+                          sla_target_hrs, sla_met, resolution_time_hrs, assigned_team,
+                          created_at, date_closed
+                   FROM cases WHERE user_id = %s AND service <> 'unknown'
+                   ORDER BY (status IN ('open','in_progress','escalated')) DESC, created_at DESC
+                   LIMIT 5""",
+                (user_id,),
+            )
+            return list(cur.fetchall())
+    except Exception as e:
+        logger.debug(f"status lookup skipped: {e}")
+        return []
+
+
+_STATUS_HUMAN = {
+    "open": ("received and in the queue", "تم الاستلام وهي في قائمة الانتظار"),
+    "in_progress": ("being processed now", "قيد المعالجة الآن"),
+    "escalated": ("with a specialist for priority handling", "لدى متخصص للمعالجة ذات الأولوية"),
+    "resolved": ("resolved", "تم الحل"),
+    "closed": ("closed", "مغلقة"),
+}
+
+
+def _status_draft(cases: list[dict], language: str) -> str:
+    """Compose a concrete, resolved status answer from the customer's real cases."""
+    ar = language == "ar"
+    if not cases:
+        return ("لا أرى أي طلبات مفتوحة على حسابك حالياً — كل شيء محدث. هل ترغب في بدء طلب جديد؟"
+                if ar else
+                "I don't see any open requests on your account right now — you're all up to date. "
+                "Would you like to start a new request?")
+    active = [c for c in cases if c.get("status") in ("open", "in_progress", "escalated")] or cases[:1]
+    lines = ["إليك آخر المستجدات على طلباتك:" if ar else "Here's the latest on your requests:"]
+    now = datetime.now(timezone.utc)
+    for c in active[:3]:
+        label = c.get("sub_service") or c.get("service_category") or (c.get("service") or "request").title()
+        st = (c.get("status") or "open")
+        human = _STATUS_HUMAN.get(st, (st, st))[1 if ar else 0]
+        opened = c.get("created_at")
+        days = ""
+        if opened:
+            try:
+                d = (now - opened).days
+                days = (f" — فُتح قبل {d} يوم" if ar else f" — opened {d} day{'s' if d != 1 else ''} ago")
+            except Exception:
+                pass
+        sla = ""
+        tgt = c.get("sla_target_hrs")
+        if tgt and st in ("open", "in_progress", "escalated") and opened:
+            try:
+                elapsed_h = (now - opened).total_seconds() / 3600
+                on_track = elapsed_h <= float(tgt)
+                sla = (f" · الهدف {int(tgt)} ساعة ({'ضمن المدة' if on_track else 'تجاوز المدة'})"
+                       if ar else
+                       f" · target {int(tgt)}h ({'on track' if on_track else 'overdue'})")
+            except Exception:
+                pass
+        cn = c.get("case_number", "")
+        lines.append((f"• {cn} — {label}: {human}{days}{sla}" if not ar else f"• {cn} — {label}: {human}{days}{sla}"))
+    tail = ("هل ترغب أن أرسل لك تحديثاً عند تغيّر الحالة؟" if ar
+            else "Would you like me to notify you the moment this status changes?")
+    lines.append("")
+    lines.append(tail)
+    return "\n".join(lines)
+
+
 async def dispatcher_node(state: SupervisorState) -> dict:
     """Invoke worker agent(s).
 
@@ -307,6 +390,18 @@ async def dispatcher_node(state: SupervisorState) -> dict:
         draft = "Connecting you with a human agent now. They'll have your full context."
         return {"worker_draft": draft, "tool_calls": [{"tool": "escalate", "args": {"reason": "explicit_request"}}],
                 "handled_by": "Escalation Agent"}
+
+    # Status checks are SOLVED, not deflected: look up the customer's real cases and answer with
+    # concrete status + SLA. This turn then auto-resolves (no human needed).
+    if intent == "status_check":
+        cases = await asyncio.to_thread(_lookup_open_cases, user_id)
+        draft = _status_draft(cases, language)
+        return {
+            "worker_draft": draft,
+            "tool_calls": [{"tool": "case_status_lookup", "args": {"cases_found": len(cases)}}],
+            "knowledge_hits": [],
+            "handled_by": "Case Status Agent",
+        }
 
     memory = state.get("memory_snippets", [])
 
