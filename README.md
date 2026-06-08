@@ -20,14 +20,20 @@ This project is a single agentic AI layer that unifies all four channels.
 
 **A · Conversational intelligence (cross-channel)**
 - Bilingual (Arabic / English) natural-language understanding with consistent intent classification.
-- Retrieval-grounded answers (RAG) over a MOEI knowledge base — every reply can cite its source.
-- Persistent citizen context: start on WhatsApp, continue on the app — the assistant remembers.
+- Retrieval-grounded answers over a MOEI knowledge base — every reply can cite its source.
+- **One continuous conversation across every channel:** every message a customer sends — on
+  WhatsApp, a call, web, or the app — is saved against their identity, and each surface reloads
+  that history on open. Start on WhatsApp, continue on the app — the thread (and context) carries
+  over, so the customer never repeats themselves. Messages show the channel they arrived on.
 - Real-time voice tone & sentiment (calm / stressed / frustrated / satisfied) feeding the unified profile.
 
 **B · Operational execution**
 - Automated case creation, routing, tracking, and resolution (CRM).
+- **Solves, not just answers:** a status request looks up the customer's real case and replies with
+  the case number, what's happening, days open, and SLA (on-track / overdue) — then auto-resolves
+  the interaction with no human needed. In Arabic and English.
 - Smart search across services, policies, FAQs, and procedures — same results on web, mobile, and chat.
-- Next-best-action recommendations and proactive WhatsApp follow-ups.
+- Next-best-action recommendations and proactive WhatsApp follow-ups via the customer's preferred channel.
 
 **C · Agent & leadership enablement**
 - AI co-pilot for human agents (live transcript, sentiment, suggested next action).
