@@ -21,23 +21,23 @@ class UaePassProfile:
 
 
 _SYNTHETIC = {
-    "784-2004-6541442-1": UaePassProfile(
-        emirates_id="784-2004-6541442-1",
-        full_name_en="Mahdhi Muzammil",
-        full_name_ar="مهدي مزمل",
+    "784-2002-1102000-2": UaePassProfile(
+        emirates_id="784-2002-1102000-2",
+        full_name_en="Ali Al Rumaithi",
+        full_name_ar="علي الرميثي",
         nationality="UAE",
-        date_of_birth="2004-08-15",
-        mobile="+971556673050",
-        email="mahdhi@example.ae",
+        date_of_birth="2002-04-11",
+        mobile="+971515851616",
+        email="ali.alrumaithi@example.ae",
     ),
-    "784-1985-0000002-3": UaePassProfile(
-        emirates_id="784-1985-0000002-3",
-        full_name_en="Ahmed Al Suwaidi",
-        full_name_ar="أحمد السويدي",
+    "784-1990-1181000-4": UaePassProfile(
+        emirates_id="784-1990-1181000-4",
+        full_name_en="Fatima Al Mansouri",
+        full_name_ar="فاطمة المنصوري",
         nationality="UAE",
-        date_of_birth="1985-09-03",
-        mobile="+971502345678",
-        email="ahmed.s@example.ae",
+        date_of_birth="1990-11-18",
+        mobile="+971530843221",
+        email="fatima.almansouri@example.ae",
     ),
 }
 

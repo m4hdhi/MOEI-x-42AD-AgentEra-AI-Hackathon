@@ -28,9 +28,10 @@ A local OAuth 2.0 provider runs inside Hassan's API at `/auth/mock-uaepass/*`.
 | Userinfo | `http://localhost:8000/auth/mock-uaepass/userinfo` |
 | Logout | `http://localhost:8000/auth/mock-uaepass/logout` |
 
-**Test identities** baked in:
-- **Mahdhi Muzammil** — `784-2004-6541442-1`, mobile `+971556673050`, SOP3
-- **Aisha Al Marri** — `784-1998-1234567-5`, mobile `+971501234567`, SOP3
+**Demo identities** baked in (both real customers from the MOEI dataset — signing in lands on a
+genuine cross-channel profile):
+- **Ali Al Rumaithi** — `784-2002-1102000-2`, mobile `+971515851616`, SOP3 — Gold tier, 3-channel history
+- **Fatima Al Mansouri** — `784-1990-1181000-4`, mobile `+971530843221`, SOP3 — repeat escalator, open cases
 
 **How to use:**
 1. Visit http://localhost:3000 (or whatever your `HASSAN_FRONTEND_URL` is)

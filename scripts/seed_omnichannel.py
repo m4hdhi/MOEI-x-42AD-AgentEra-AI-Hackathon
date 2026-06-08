@@ -27,9 +27,9 @@ NOW = datetime.now(timezone.utc)
 
 # ---- Synthetic citizen pool (matches our uaepass_lookup + adds more for variety) -----
 CITIZENS = [
-    ("784-2004-6541442-1", "Mahdhi Muzammil"),
+    ("784-2002-1102000-2", "Ali Al Rumaithi"),
     ("784-1985-0000002-3", "Ahmed Al Suwaidi"),
-    ("784-1998-1234567-5", "Aisha Al Marri"),
+    ("784-1990-1181000-4", "Fatima Al Mansouri"),
     ("784-1972-2233445-2", "Mohammed Al Hashimi"),
     ("784-1988-7766554-6", "Fatima Al Qubaisi"),
     ("784-1995-1122334-0", "Khalid Al Mazrouei"),

@@ -389,6 +389,64 @@ def import_interactions(path: Path) -> int:
     return total
 
 
+# Two dataset customers are surfaced as the UAE PASS demo identities so that signing in lands
+# on a real, rich cross-channel profile. We re-key their records to the demo Emirates IDs that
+# the mock UAE PASS issues (see apps/api/app/routes/mock_uaepass.py).
+DEMO_PERSONAS = {
+    "UAE-001102": "784-2002-1102000-2",  # Ali Al Rumaithi (Gold, 3 channels)
+    "UAE-001181": "784-1990-1181000-4",  # Fatima Al Mansouri (repeat escalator)
+}
+# Old developer test identities to purge (kept out of the demo).
+_OLD_TEST_IDS = ("784-2004-6541442-1", "784-1998-1234567-5")
+
+
+def finalize_demo() -> None:
+    with db_cursor() as cur:
+        # 1) remove old developer test personas
+        cur.execute("DELETE FROM citizens WHERE user_id = ANY(%s)", (list(_OLD_TEST_IDS),))
+        cur.execute("DELETE FROM cases WHERE user_id = ANY(%s)", (list(_OLD_TEST_IDS),))
+
+        # 2) re-key the two demo customers to their UAE PASS Emirates IDs so login → real profile
+        for cust, eid in DEMO_PERSONAS.items():
+            cur.execute("DELETE FROM citizens WHERE user_id = %s", (eid,))
+            cur.execute("UPDATE citizens SET user_id=%s, customer_id=%s WHERE customer_id=%s", (eid, eid, cust))
+            cur.execute("UPDATE cases SET user_id=%s, customer_id=%s WHERE customer_id=%s", (eid, eid, cust))
+            cur.execute("UPDATE interactions SET customer_id=%s WHERE customer_id=%s", (eid, cust))
+
+        # 3) Compress all dataset dates into the last WINDOW_DAYS so the time-windowed dashboards
+        #    (today / 7d / 30d) are densely populated for the demo. A single monotonic linear map
+        #    over every timestamp preserves ordering (created < resolved stays true).
+        WINDOW_DAYS = 30
+        cur.execute(
+            """SELECT LEAST(
+                   (SELECT MIN(created_at) FROM cases WHERE case_number LIKE 'MOEI-CASE-%%'),
+                   (SELECT MIN(occurred_at) FROM interactions)) AS gmin,
+                 GREATEST(
+                   (SELECT MAX(created_at) FROM cases WHERE case_number LIKE 'MOEI-CASE-%%'),
+                   (SELECT MAX(occurred_at) FROM interactions)) AS gmax"""
+        )
+        b = cur.fetchone() or {}
+        gmin, gmax = b.get("gmin"), b.get("gmax")
+        if gmin and gmax and gmax > gmin:
+            span = (gmax - gmin).total_seconds()
+            win = WINDOW_DAYS * 86400.0
+            p = {"gmin": gmin, "span": span, "win": win}
+            # map t -> (now - WINDOW) + ((t - gmin)/span) * WINDOW
+            expr = ("(NOW() - INTERVAL '%d days') + "
+                    "((EXTRACT(EPOCH FROM ({col} - %%(gmin)s)) / %%(span)s) * %%(win)s) * INTERVAL '1 second'") % WINDOW_DAYS
+            cur.execute(
+                f"""UPDATE cases SET
+                      created_at  = {expr.format(col='created_at')},
+                      updated_at  = {expr.format(col='updated_at')},
+                      date_opened = {expr.format(col='date_opened')},
+                      date_closed = {expr.format(col='date_closed')},
+                      resolved_at = {expr.format(col='resolved_at')}
+                    WHERE case_number LIKE 'MOEI-CASE-%%'""",
+                p,
+            )
+            cur.execute(f"UPDATE interactions SET occurred_at = {expr.format(col='occurred_at')}", p)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", default=str(DEFAULT_FILE))
@@ -404,6 +462,8 @@ def main():
     print(f"  ✓ Service cases → cases:      {k}")
     i = import_interactions(path)
     print(f"  ✓ Channel logs → interactions: {i}")
+    finalize_demo()
+    print("  ✓ Rebased dates to now + linked demo personas (Ali, Fatima); purged old test IDs")
     print("Done.")
 
 

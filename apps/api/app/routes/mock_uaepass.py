@@ -6,9 +6,10 @@ Looks and behaves like the real qa-id.uaepass.ae:
   - Same /token POST with Basic auth
   - Same /userinfo schema (sub, idn, fullnameEN, fullnameAR, userType, acr, mobile, email, …)
 
-Two pre-configured citizens:
-  - Mahdhi Muzammil           (Emirates ID 784-2004-6541442-1) — primary demo identity
-  - Aisha Al Marri            (Emirates ID 784-1998-1234567-5) — secondary persona
+Two pre-configured citizens (both real customers from the MOEI dataset, so signing in lands
+on a genuine cross-channel profile):
+  - Ali Al Rumaithi           (Emirates ID 784-2002-1102000-2) — Gold tier, 3-channel history
+  - Fatima Al Mansouri        (Emirates ID 784-1990-1181000-4) — repeat escalator, open cases
 
 The mock is intentionally faithful so the SAME backend OAuth client works against either
 the mock or the real UAE PASS. Switch by setting UAEPASS_MODE=staging in .env.
@@ -31,22 +32,22 @@ router = APIRouter(prefix="/auth/mock-uaepass", tags=["mock-uaepass"])
 # Same shape as the real UAE PASS /users/me response (per integration toolkit v2.0)
 
 _USERS: dict[str, dict] = {
-    "784200465414421": {       # Mahdhi (no dashes — matches real `idn` format)
-        "sub": "MOCKUUID-MAHDHI-784200465414421",
+    "784200211020002": {       # Ali Al Rumaithi — dataset customer UAE-001102 (Gold, 3 channels)
+        "sub": "MOCKUUID-784200211020002",
         "userType": "SOP3",     # SOP3 = Verified UAE PASS identity (Emirates ID verified)
-        "fullnameEN": "Mahdhi Muzammil",
-        "fullnameAR": "مهدي مزمل",
-        "firstnameEN": "Mahdhi",
-        "firstnameAR": "مهدي",
-        "lastnameEN": "Muzammil",
-        "lastnameAR": "مزمل",
+        "fullnameEN": "Ali Al Rumaithi",
+        "fullnameAR": "علي الرميثي",
+        "firstnameEN": "Ali",
+        "firstnameAR": "علي",
+        "lastnameEN": "Al Rumaithi",
+        "lastnameAR": "الرميثي",
         "gender": "Male",
-        "idn": "784200465414421",
+        "idn": "784200211020002",
         "idType": "ID",
         "nationalityEN": "UAE",
         "nationalityAR": "الإمارات",
-        "mobile": "971556673050",
-        "email": "mahdhi@example.ae",
+        "mobile": "971515851616",
+        "email": "ali.alrumaithi@example.ae",
         "titleEN": "",
         "titleAR": "",
         "acr": "urn:safelayer:tws:policies:authentication:level:high",
@@ -55,22 +56,22 @@ _USERS: dict[str, dict] = {
             "urn:uae:authentication:method:verified",
         ],
     },
-    "784199812345675": {
-        "sub": "MOCKUUID-AISHA-784199812345675",
+    "784199011810004": {       # Fatima Al Mansouri — dataset customer UAE-001181 (repeat escalator)
+        "sub": "MOCKUUID-784199011810004",
         "userType": "SOP3",
-        "fullnameEN": "Aisha Al Marri",
-        "fullnameAR": "عائشة المري",
-        "firstnameEN": "Aisha",
-        "firstnameAR": "عائشة",
-        "lastnameEN": "Al Marri",
-        "lastnameAR": "المري",
+        "fullnameEN": "Fatima Al Mansouri",
+        "fullnameAR": "فاطمة المنصوري",
+        "firstnameEN": "Fatima",
+        "firstnameAR": "فاطمة",
+        "lastnameEN": "Al Mansouri",
+        "lastnameAR": "المنصوري",
         "gender": "Female",
-        "idn": "784199812345675",
+        "idn": "784199011810004",
         "idType": "ID",
         "nationalityEN": "UAE",
         "nationalityAR": "الإمارات",
-        "mobile": "971501234567",
-        "email": "aisha.almarri@example.ae",
+        "mobile": "971530843221",
+        "email": "fatima.almansouri@example.ae",
         "titleEN": "",
         "titleAR": "",
         "acr": "urn:safelayer:tws:policies:authentication:level:high",
@@ -426,7 +427,7 @@ async def authorize(
         </div>
         <a href="#" class="recover-link">{recover}</a>
 
-        <div class="dev-toggle" id="devToggle">— developer · test identities —</div>
+        <div class="dev-toggle" id="devToggle">— demo identities —</div>
         <div class="quick-panel" id="quickPanel">
           <div class="quick-list">{quick_fills}</div>
         </div>
