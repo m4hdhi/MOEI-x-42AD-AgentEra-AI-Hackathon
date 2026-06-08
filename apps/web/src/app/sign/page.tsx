@@ -26,21 +26,45 @@ import { API_URL } from "@/lib/utils";
 import { LoginGate } from "@/components/LoginGate";
 import type { UaePassSession } from "@/lib/auth";
 
-// ── MOEI-relevant bilingual vocabulary ──────────────────────────────────────
-type Word = { id: string; en: string; ar: string; emoji: string };
+// ── Bilingual vocabulary, grounded in the real MOEI service catalog ──────────
+// (data/moei/services.json: housing, energy, transport, maritime, infrastructure,
+//  general — complaints, inquiries, suggestions, customer service). Arabic added
+//  here because the scraped catalog only ships Arabic for SZHP.
+type Word = { id: string; en: string; ar: string; emoji: string; cat: string };
 const VOCAB: Word[] = [
-  { id: "hello", en: "Hello", ar: "مرحبا", emoji: "👋" },
-  { id: "help", en: "I need help", ar: "أحتاج مساعدة", emoji: "🆘" },
-  { id: "housing", en: "Housing", ar: "السكن", emoji: "🏠" },
-  { id: "energy", en: "Electricity", ar: "الكهرباء", emoji: "⚡" },
-  { id: "status", en: "Check my status", ar: "حالة طلبي", emoji: "📋" },
-  { id: "complaint", en: "I have a complaint", ar: "لدي شكوى", emoji: "⚠️" },
-  { id: "thanks", en: "Thank you", ar: "شكرا", emoji: "🙏" },
-  { id: "yes", en: "Yes", ar: "نعم", emoji: "✅" },
-  { id: "no", en: "No", ar: "لا", emoji: "❌" },
-  { id: "emergency", en: "Emergency", ar: "طوارئ", emoji: "🚨" },
+  // Conversation basics
+  { id: "hello", en: "Hello", ar: "مرحبا", emoji: "👋", cat: "Basics" },
+  { id: "thanks", en: "Thank you", ar: "شكرا", emoji: "🙏", cat: "Basics" },
+  { id: "yes", en: "Yes", ar: "نعم", emoji: "✅", cat: "Basics" },
+  { id: "no", en: "No", ar: "لا", emoji: "❌", cat: "Basics" },
+  { id: "please", en: "Please", ar: "من فضلك", emoji: "🤲", cat: "Basics" },
+  { id: "help", en: "I need help", ar: "أحتاج مساعدة", emoji: "🆘", cat: "Basics" },
+  { id: "goodbye", en: "Goodbye", ar: "مع السلامة", emoji: "👋", cat: "Basics" },
+  // MOEI service domains
+  { id: "housing", en: "Housing", ar: "السكن", emoji: "🏠", cat: "Services" },
+  { id: "housing_aid", en: "Housing assistance", ar: "مساعدة سكنية", emoji: "🏘️", cat: "Services" },
+  { id: "loan", en: "Housing loan", ar: "قرض الإسكان", emoji: "🏦", cat: "Services" },
+  { id: "energy", en: "Electricity", ar: "الكهرباء", emoji: "⚡", cat: "Services" },
+  { id: "energy_domain", en: "Energy", ar: "الطاقة", emoji: "🔋", cat: "Services" },
+  { id: "transport", en: "Transport", ar: "النقل", emoji: "🚚", cat: "Services" },
+  { id: "vehicle_permit", en: "Vehicle permit", ar: "تصريح مركبة", emoji: "🚛", cat: "Services" },
+  { id: "maritime", en: "Maritime", ar: "الشؤون البحرية", emoji: "⚓", cat: "Services" },
+  { id: "boat", en: "Boat registration", ar: "تسجيل قارب", emoji: "🚤", cat: "Services" },
+  { id: "infrastructure", en: "Infrastructure", ar: "البنية التحتية", emoji: "🏗️", cat: "Services" },
+  // Requests & actions
+  { id: "complaint", en: "I have a complaint", ar: "لدي شكوى", emoji: "⚠️", cat: "Requests" },
+  { id: "inquiry", en: "I have an inquiry", ar: "لدي استفسار", emoji: "❓", cat: "Requests" },
+  { id: "suggestion", en: "I have a suggestion", ar: "لدي اقتراح", emoji: "💡", cat: "Requests" },
+  { id: "status", en: "Check my status", ar: "حالة طلبي", emoji: "📋", cat: "Requests" },
+  { id: "appointment", en: "Appointment", ar: "موعد", emoji: "📅", cat: "Requests" },
+  { id: "documents", en: "Documents", ar: "المستندات", emoji: "📄", cat: "Requests" },
+  { id: "emirates_id", en: "Emirates ID", ar: "الهوية الإماراتية", emoji: "🪪", cat: "Requests" },
+  { id: "fees", en: "Fees", ar: "الرسوم", emoji: "💵", cat: "Requests" },
+  { id: "customer_service", en: "Customer service", ar: "خدمة المتعاملين", emoji: "🎧", cat: "Requests" },
+  { id: "emergency", en: "Emergency", ar: "طوارئ", emoji: "🚨", cat: "Requests" },
 ];
 const WORD_BY_ID = Object.fromEntries(VOCAB.map((w) => [w.id, w]));
+const CATEGORIES = ["Basics", "Services", "Requests"];
 
 // ── Sequence / DTW config ────────────────────────────────────────────────────
 const SEQ_LEN = 24;            // resample every captured motion segment to this many frames
@@ -88,6 +112,7 @@ function SignExperience({ session }: { session: UaePassSession }) {
   const [busy, setBusy] = useState(false);
   const [threshold, setThreshold] = useState(1.4);
   const [trainedCounts, setTrainedCounts] = useState<Record<string, number>>({});
+  const [quickTrain, setQuickTrain] = useState(false);
   const [sessionId] = useState(() => "sign-" + (session.emirates_id || "anon") + "-" + Date.now());
 
   // ── refs read by the long-lived detection loop ──
@@ -99,6 +124,9 @@ function SignExperience({ session }: { session: UaePassSession }) {
   const lastWordAtRef = useRef(Date.now());
   const busyRef = useRef(false);
   const langRef = useRef(language);
+  const quickQueueRef = useRef<string[]>([]); // remaining word ids in guided setup
+  const quickTrainRef = useRef(false);
+  useEffect(() => { quickTrainRef.current = quickTrain; }, [quickTrain]);
 
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { recordingWordRef.current = recordingWord; }, [recordingWord]);
@@ -247,8 +275,20 @@ function SignExperience({ session }: { session: UaePassSession }) {
         cur.push(seq);
         templatesRef.current[teachId] = cur.slice(-3); // keep up to 3 samples
         persist();
-        setRecordingWord(null);
-        setStatus(`Learned "${WORD_BY_ID[teachId]?.en}" ✓ (${templatesRef.current[teachId].length} sample${templatesRef.current[teachId].length > 1 ? "s" : ""})`);
+        const learnedEn = WORD_BY_ID[teachId]?.en;
+        // Guided "Quick Setup": auto-advance to the next word in the queue.
+        if (quickQueueRef.current.length > 0) {
+          const next = quickQueueRef.current.shift()!;
+          setRecordingWord(next);
+          setStatus(`✓ ${learnedEn} learned. Now sign "${WORD_BY_ID[next]?.en}"…`);
+        } else if (quickTrainRef.current) {
+          setRecordingWord(null);
+          setQuickTrain(false);
+          setStatus(`✓ ${learnedEn} learned — Quick Setup complete! Switch to Live.`);
+        } else {
+          setRecordingWord(null);
+          setStatus(`Learned "${learnedEn}" ✓ (${templatesRef.current[teachId].length} sample${templatesRef.current[teachId].length > 1 ? "s" : ""})`);
+        }
         return;
       }
 
@@ -364,8 +404,25 @@ function SignExperience({ session }: { session: UaePassSession }) {
 
   function startRecording(id: string) {
     setMode("teach");
+    setQuickTrain(false);
+    quickQueueRef.current = [];
     setRecordingWord(id);
     setStatus(`Perform the sign for "${WORD_BY_ID[id]?.en}" once…`);
+  }
+  function startQuickTrain() {
+    const queue = VOCAB.map((w) => w.id);
+    const first = queue.shift()!;
+    quickQueueRef.current = queue;
+    setMode("teach");
+    setQuickTrain(true);
+    setRecordingWord(first);
+    setStatus(`Quick Setup — sign "${WORD_BY_ID[first]?.en}" once. It auto-advances.`);
+  }
+  function stopQuickTrain() {
+    quickQueueRef.current = [];
+    setQuickTrain(false);
+    setRecordingWord(null);
+    setStatus("Quick Setup paused");
   }
   function clearTemplates() {
     templatesRef.current = {};
@@ -504,40 +561,76 @@ function SignExperience({ session }: { session: UaePassSession }) {
                 </div>
                 <span className="text-[11px] text-moei-muted">{trainedWords}/{VOCAB.length} taught · {totalTrained} samples</span>
               </div>
-              <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
-                {VOCAB.map((w) => {
-                  const count = trainedCounts[w.id] || 0;
-                  return (
-                    <div key={w.id} className={`flex items-center justify-between rounded-lg border px-2.5 py-2 ${count ? "border-emerald-200 bg-emerald-50/50" : "border-moei-line"}`}>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-lg">{w.emoji}</span>
-                        <div className="min-w-0">
-                          <div className="text-[12px] font-semibold text-moei-ink truncate">{w[language]}</div>
-                          <div className="text-[10px] text-moei-muted truncate">{language === "en" ? w.ar : w.en}</div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => startRecording(w.id)}
-                        disabled={!ready || recordingWord === w.id}
-                        className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition disabled:opacity-50 ${
-                          count ? "text-emerald-700 hover:bg-emerald-100" : "text-moei-bronze hover:bg-moei-cream"
-                        }`}
-                      >
-                        {recordingWord === w.id ? (<><CircleDot size={12} className="animate-pulse" /> sign now</>)
-                          : count ? (<><Check size={12} /> {count} · re-record</>)
-                          : (<><CircleDot size={12} /> record</>)}
-                      </button>
+
+              {/* Quick Setup — guided one-click training of the whole vocabulary */}
+              {quickTrain ? (
+                <div className="mb-3 rounded-lg border border-red-300 bg-red-50 p-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-red-700">
+                      Quick Setup · {VOCAB.length - quickQueueRef.current.length}/{VOCAB.length}
+                    </span>
+                    <button onClick={stopQuickTrain} className="text-[11px] text-moei-muted hover:text-red-700">stop</button>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-red-200">
+                    <div className="h-full bg-red-600 transition-all" style={{ width: `${((VOCAB.length - quickQueueRef.current.length) / VOCAB.length) * 100}%` }} />
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-red-700">
+                    Sign <strong>{recordingWord ? WORD_BY_ID[recordingWord]?.[language] : ""}</strong> once — it auto-advances.
+                  </p>
+                </div>
+              ) : (
+                <button
+                  onClick={startQuickTrain}
+                  disabled={!ready}
+                  className="mb-3 w-full moei-btn-primary justify-center disabled:opacity-50"
+                >
+                  <GraduationCap size={14} /> Quick Setup — teach all {VOCAB.length} signs (~60s)
+                </button>
+              )}
+
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {CATEGORIES.map((cat) => (
+                  <div key={cat}>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-moei-bronze/70 mb-1.5">{cat}</div>
+                    <div className="space-y-1.5">
+                      {VOCAB.filter((w) => w.cat === cat).map((w) => {
+                        const count = trainedCounts[w.id] || 0;
+                        return (
+                          <div key={w.id} className={`flex items-center justify-between rounded-lg border px-2.5 py-1.5 ${count ? "border-emerald-200 bg-emerald-50/50" : "border-moei-line"}`}>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-base">{w.emoji}</span>
+                              <div className="min-w-0">
+                                <div className="text-[12px] font-semibold text-moei-ink truncate">{w[language]}</div>
+                                <div className="text-[10px] text-moei-muted truncate">{language === "en" ? w.ar : w.en}</div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => startRecording(w.id)}
+                              disabled={!ready || recordingWord === w.id}
+                              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition disabled:opacity-50 shrink-0 ${
+                                count ? "text-emerald-700 hover:bg-emerald-100" : "text-moei-bronze hover:bg-moei-cream"
+                              }`}
+                            >
+                              {recordingWord === w.id ? (<><CircleDot size={12} className="animate-pulse" /> sign</>)
+                                : count ? (<><Check size={12} /> {count}</>)
+                                : (<><CircleDot size={12} /> record</>)}
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
+
               {totalTrained > 0 && (
                 <button onClick={clearTemplates} className="mt-2 text-[11px] text-moei-muted hover:text-red-600">Clear all learned signs</button>
               )}
               <div className="mt-3 rounded-lg bg-moei-cream/40 p-2.5 text-[11px] text-moei-body leading-relaxed">
-                <strong>For judges:</strong> In <em>Teach</em> mode, click <em>record</em> on a word, perform the
-                sign once (it auto-detects start/stop), repeat for a few words. Switch to <em>Live</em> — sign
-                naturally, words build a sentence, pause 2.5s and the assistant answers with voice.
+                <strong>For judges:</strong> Click <em>Quick Setup</em> and sign each prompted word once
+                (~60s, one-time — it&apos;s saved in your browser). Then switch to <em>Live</em>: sign
+                naturally, words build a sentence, pause 2.5s and the assistant replies with voice.
+                Use the <strong>{language === "en" ? "العربية" : "English"}</strong> toggle (top-right) to switch sign language.
               </div>
             </div>
 
