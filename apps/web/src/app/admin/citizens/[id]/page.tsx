@@ -18,6 +18,12 @@ type Case = {
 type Activity = { id: number; channel: string | null; event_type: string; summary: string; created_at: string };
 type Recording = { id: string; duration_seconds: number; summary: string | null; service: string | null; resolved: boolean | null; qa_score: number | null; case_number: string | null; created_at: string };
 type Feedback = { csat: number | null; ces: number | null; comment: string | null; case_number: string | null; submitted_at: string };
+type Interaction = {
+  interaction_id: string | null; channel: string; occurred_at: string | null; intent: string | null;
+  service_category: string | null; sub_service: string | null; message_sample: string | null;
+  sentiment_label: string | null; sentiment_score: number | null; csat: number | null;
+  escalated: boolean | null; resolution_status: string | null; case_id: string | null;
+};
 type Twin = {
   preferred_channel: string | null; frequent_services: string[]; satisfaction_trend: string;
   predicted_next_need: string; life_event_signal: string | null; calls_recorded: number; avg_csat: number | null;
@@ -29,8 +35,9 @@ type Profile = {
   summary: {
     total_cases: number; open_cases: number; escalated_cases: number; resolved_cases: number;
     avg_sentiment: number | null; first_contact: string | null; last_contact: string | null; channels: string[];
+    total_interactions: number; interaction_channels: Record<string, number>; cross_channel: boolean;
   };
-  cases: Case[]; activity: Activity[]; recordings: Recording[]; feedback: Feedback[];
+  cases: Case[]; activity: Activity[]; recordings: Recording[]; feedback: Feedback[]; interactions: Interaction[];
 };
 
 const CH_ICON: Record<string, typeof Globe> = { whatsapp: MessageSquare, voice: Mic, web: Globe, mobile: Smartphone };
@@ -143,11 +150,22 @@ export default function CitizenProfilePage() {
                 {(data.name || "?").slice(0, 1).toUpperCase()}
               </span>
               <div>
-                <h1 className="flex items-center gap-2 text-2xl font-bold text-moei-ink">
+                <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-moei-ink">
                   {data.name || "Unknown citizen"}
                   {data.verified && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                       <ShieldCheck size={11} /> UAE PASS verified
+                    </span>
+                  )}
+                  {p.vip_tier && p.vip_tier !== "Standard" && (
+                    <span className={"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold " +
+                      (p.vip_tier === "Platinum" ? "bg-slate-800 text-white" : p.vip_tier === "Gold" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700")}>
+                      <Star size={11} /> {p.vip_tier}
+                    </span>
+                  )}
+                  {p.risk_flag && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                      <AlertTriangle size={11} /> {p.risk_flag}
                     </span>
                   )}
                 </h1>
@@ -186,8 +204,23 @@ export default function CitizenProfilePage() {
             <Kpi label="Resolved" value={String(s.resolved_cases)} tone="good" />
             <Kpi label="Avg sentiment" value={s.avg_sentiment === null ? "—" : `${Math.round(s.avg_sentiment * 100)}%`}
               tone={s.avg_sentiment !== null && s.avg_sentiment < 0.4 ? "warn" : "good"} />
-            <Kpi label="Channels" value={String(s.channels.length)} sub={s.channels.join(", ")} />
+            <Kpi label="Interactions" value={String(s.total_interactions)}
+              sub={Object.entries(s.interaction_channels || {}).map(([c, n]) => `${c} ${n}`).join(" · ")} />
           </div>
+
+          {/* Cross-channel memory banner — the challenge's #1 requirement (Q8/Q20) */}
+          {s.cross_channel && (
+            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-moei-bronze/40 bg-gradient-to-r from-moei-cream/60 to-white px-4 py-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-moei-bronze px-2.5 py-1 text-[11px] font-bold text-white">
+                <Compass size={12} /> Unified across {Object.keys(s.interaction_channels || {}).length} channels
+              </span>
+              <span className="text-xs text-moei-body">
+                One identity, one memory — this citizen has been served on{" "}
+                {Object.entries(s.interaction_channels || {}).map(([c, n]) => `${c} (${n})`).join(", ")}
+                {" "}without ever repeating themselves.
+              </span>
+            </div>
+          )}
 
           {/* Digital Twin */}
           {data.twin && <DigitalTwin twin={data.twin} />}
@@ -265,8 +298,41 @@ export default function CitizenProfilePage() {
             )}
           </div>
 
-          {/* Activity timeline + feedback */}
+          {/* Cross-channel history + activity timeline + feedback */}
           <div className="space-y-6">
+            {data.interactions && data.interactions.length > 0 && (
+              <Panel title="Cross-channel history" count={data.interactions.length}>
+                <ol className="relative space-y-3 border-l border-moei-line pl-4">
+                  {data.interactions.slice(0, 25).map((it, i) => {
+                    const Icon = CH_ICON[it.channel] || Globe;
+                    return (
+                      <li key={i} className="relative">
+                        <span className="absolute -left-[22px] top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-white bg-moei-bronze">
+                          <Icon size={8} className="text-white" />
+                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="rounded-full bg-moei-cream px-1.5 py-0.5 text-[9px] font-semibold uppercase text-moei-bronze">{it.channel}</span>
+                          {it.intent && <span className="text-[11px] font-medium text-moei-ink">{it.intent}</span>}
+                          {it.escalated && <span className="rounded-full bg-red-50 px-1.5 text-[9px] font-semibold text-red-700">escalated</span>}
+                          {it.case_id && <span className="font-mono text-[9px] text-moei-muted">{it.case_id}</span>}
+                        </div>
+                        {(it.service_category || it.message_sample) && (
+                          <p className="mt-0.5 truncate text-[11px] text-moei-body">
+                            {it.service_category}{it.message_sample ? ` — “${it.message_sample}”` : ""}
+                          </p>
+                        )}
+                        <div className="text-[10px] text-moei-muted">
+                          {it.occurred_at ? new Date(it.occurred_at).toLocaleString() : ""}
+                          {it.sentiment_label ? ` · ${it.sentiment_label}` : ""}
+                          {it.csat ? ` · CSAT ${it.csat}/5` : ""}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </Panel>
+            )}
+
             <Panel title="Activity timeline" count={data.activity.length}>
               <ol className="relative space-y-3 border-l border-moei-line pl-4">
                 {data.activity.map((a) => (

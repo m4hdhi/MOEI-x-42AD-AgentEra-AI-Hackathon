@@ -383,6 +383,18 @@ def citizen_profile(user_id: str) -> dict:
         )
         feedback = cur.fetchall()
 
+        # Unified cross-channel interaction history (WhatsApp / Voice / Web), keyed by Customer ID.
+        # This is what lets any channel retrieve "everything this customer ever did" (challenge Q8/Q20).
+        cur.execute(
+            """SELECT interaction_id, channel, occurred_at, intent, service_category,
+                      sub_service, message_sample, sentiment_label, sentiment_score, csat,
+                      escalated, resolution_status, case_id
+               FROM interactions WHERE customer_id = %s
+               ORDER BY occurred_at DESC NULLS LAST LIMIT 80""",
+            (user_id,),
+        )
+        interactions = cur.fetchall()
+
         # Derived aggregates
         cur.execute(
             """SELECT
@@ -399,8 +411,12 @@ def citizen_profile(user_id: str) -> dict:
         )
         agg = cur.fetchone() or {}
 
-    if not profile and not cases and not activity:
+    if not profile and not cases and not activity and not interactions:
         raise HTTPException(404, f"no record for {user_id}")
+
+    # Cross-channel interaction breakdown (the unified-memory headline metric).
+    from collections import Counter as _Counter
+    _ix_chan = _Counter(i.get("channel") for i in interactions if i.get("channel"))
 
     twin = _digital_twin(cases, recordings, feedback)
 
@@ -424,13 +440,87 @@ def citizen_profile(user_id: str) -> dict:
             "first_contact": agg["first_contact"].isoformat() if agg.get("first_contact") else None,
             "last_contact": agg["last_contact"].isoformat() if agg.get("last_contact") else None,
             "channels": [c for c in (agg.get("channels") or []) if c],
+            "total_interactions": len(interactions),
+            "interaction_channels": dict(_ix_chan),
+            "cross_channel": len(_ix_chan) >= 2,
         },
         "twin": twin,
         "cases": [_serialize(r) for r in cases],
+        "interactions": [_serialize(r) for r in interactions],
         "activity": [_serialize(r) for r in activity],
         "recordings": [_serialize(r) for r in recordings],
         "feedback": [_serialize(r) for r in feedback],
     }
+
+
+@router.get("/identify")
+def identify(phone: str | None = None, customer_id: str | None = None) -> dict:
+    """Resolve a caller to their unified profile from a real-time identifier (challenge Q10).
+
+    Phone number is the primary cross-channel key (present on WhatsApp, voice, and app login,
+    no extra step). Returns the unified CRM profile + a compact cross-channel snapshot so any
+    channel can greet the customer by name and continue where they left off — without asking
+    them to repeat anything (challenge Q8/Q20).
+    """
+    if not phone and not customer_id:
+        raise HTTPException(400, "provide phone or customer_id")
+
+    with db_cursor() as cur:
+        if customer_id:
+            cur.execute("SELECT * FROM citizens WHERE customer_id = %s OR user_id = %s LIMIT 1", (customer_id, customer_id))
+        else:
+            norm = "".join(ch for ch in phone if ch.isdigit())[-9:]  # last 9 digits — robust to +971/0 prefixes
+            cur.execute("SELECT * FROM citizens WHERE regexp_replace(mobile, '[^0-9]', '', 'g') LIKE %s LIMIT 1", (f"%{norm}",))
+        profile = cur.fetchone()
+        if not profile:
+            return {"found": False, "phone": phone, "customer_id": customer_id}
+
+        cid = profile["customer_id"] or profile["user_id"]
+        cur.execute(
+            """SELECT channel, occurred_at, intent, service_category, case_id
+               FROM interactions WHERE customer_id = %s ORDER BY occurred_at DESC NULLS LAST LIMIT 5""",
+            (cid,),
+        )
+        recent = cur.fetchall()
+        cur.execute(
+            """SELECT case_number, service, status, priority, sla_met
+               FROM cases WHERE user_id = %s AND status NOT IN ('closed','resolved')
+               ORDER BY created_at DESC LIMIT 5""",
+            (cid,),
+        )
+        open_cases = cur.fetchall()
+        cur.execute("SELECT count(DISTINCT channel) AS ch FROM interactions WHERE customer_id = %s", (cid,))
+        nch = (cur.fetchone() or {}).get("ch") or 0
+
+    last = recent[0] if recent else None
+    return {
+        "found": True,
+        "customer_id": cid,
+        "name": profile.get("full_name_en"),
+        "name_ar": profile.get("full_name_ar"),
+        "vip_tier": profile.get("vip_tier"),
+        "risk_flag": profile.get("risk_flag"),
+        "preferred_channel": profile.get("preferred_channel"),
+        "emirate": profile.get("emirate"),
+        "language": profile.get("preferred_language"),
+        "open_cases": [_serialize(c) for c in open_cases],
+        "cross_channel": int(nch) >= 2,
+        "channels_seen": int(nch),
+        "last_interaction": _serialize(last) if last else None,
+        "recent_interactions": [_serialize(r) for r in recent],
+        "greeting": _greeting(profile, last, open_cases),
+    }
+
+
+def _greeting(profile: dict, last: dict | None, open_cases: list) -> str:
+    """A ready-to-speak opening line the agent/bot can use immediately — no 'please hold'."""
+    name = (profile.get("full_name_en") or "").split(" ")[0] or "there"
+    if open_cases:
+        c = open_cases[0]
+        return f"Welcome back, {name}. I can see your {c.get('service','')} case {c.get('case_number','')} is {c.get('status','open')} — would you like an update?"
+    if last and last.get("service_category"):
+        return f"Welcome back, {name}. Last time you contacted us about {last.get('service_category')} on {last.get('channel')}. How can I help today?"
+    return f"Welcome back, {name}. How can I help you today?"
 
 
 @router.get("/citizens/{user_id}/recommendations")

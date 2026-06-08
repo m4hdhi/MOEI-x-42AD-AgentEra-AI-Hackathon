@@ -67,3 +67,6 @@ Claude.pdf
 
 # Local AI/editor tooling config
 .claude/
+
+# Stray root-level dataset downloads (the clean copy lives in data/moei/)
+/*.xlsx

@@ -103,6 +103,7 @@ infra/
   postgres/               init.sql … init_v6 (schema migrations)
 scripts/
   crawl_moei.py           crawl moei.gov.ae → knowledge_documents (EN/AR)
+  import_dataset.py       loads the official MOEI dataset (CRM, cases, channel logs)
   seed_omnichannel.py     synthetic demo data (cases, notifications, activity)
 docs/                     PDPL mapping, 90-day pilot, deck outline
 ```
@@ -120,7 +121,8 @@ make infra-up
 # 2. Database schema (run each migration in order)
 for f in infra/postgres/init.sql infra/postgres/init_v2.sql infra/postgres/init_v3.sql \
          infra/postgres/init_v4_knowledge.sql infra/postgres/init_v5_recordings.sql \
-         infra/postgres/init_v6_citizens.sql; do
+         infra/postgres/init_v6_citizens.sql infra/postgres/init_v7_geo.sql \
+         infra/postgres/init_v8_dataset.sql; do
   docker exec -i hassan-postgres psql -U hassan -d hassan < "$f"
 done
 
@@ -137,7 +139,11 @@ make api
 make web-install
 make web
 
-# 6. (optional) Populate demo content
+# 6. Load the official MOEI Omnichannel dataset (200 CRM profiles, 250 cases,
+#    300 WhatsApp + 400 voice + 350 web sessions — all linked by Customer ID)
+uv run python scripts/import_dataset.py
+
+# 6b. (optional) extra synthetic content + knowledge crawl
 make synth                                       # synthetic cases + activity
 uv run python scripts/crawl_moei.py --max 250    # crawl moei.gov.ae into the knowledge base
 ```
@@ -164,9 +170,15 @@ Open **http://localhost:3000**.
 
 ## Data & privacy
 
-- All demo data is **synthetic**; the moei.gov.ae crawl is public content.
-- The MOEI-provided datasets (CRM, NICE call recordings, logs, FAQs) load into the same
-  schema and knowledge base — no code changes required.
+- The system runs on the **official MOEI Omnichannel hackathon dataset** — 200 unified CRM
+  profiles, 250 service cases, and 1,050 channel interactions (300 WhatsApp + 400 voice +
+  350 web/app), all linked by **Customer ID**. `scripts/import_dataset.py` loads every sheet
+  into the live schema (`citizens`, `cases`, `interactions`). 186/200 customers span 2+ channels.
+- **Cross-channel memory** (the challenge's #1 requirement): `GET /crm/identify?phone=…` resolves
+  a caller to their unified profile from any channel — name, VIP tier, risk flag, open cases, and a
+  ready-to-speak greeting — so they never repeat themselves. The 360° profile (`/admin/citizens`)
+  shows the full WhatsApp→voice→web timeline on one screen.
+- The moei.gov.ae service catalogue is public content; synthetic generators remain for stress-testing.
 - Citizen interactions are gated behind **UAE PASS sign-in**, so requests are stored against a
   verified identity. PII is redacted in transit; every decision is logged for the right-to-explanation
   audit trail (PDPL Article 7). `.env` secrets are never committed.
