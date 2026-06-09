@@ -7,15 +7,6 @@ requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 authors = [{ name = "AgentEra Team" }]
 dependencies = [
-    "joblib>=1.5.3",
-    "scikit-learn>=1.9.0",
-]
-
-[build-system]
-requires = ["setuptools>=77"]
-build-backend = "setuptools.build_meta"
-
-dependencies = [
   # API
   "fastapi>=0.115",
   "uvicorn[standard]>=0.32",
@@ -57,12 +48,23 @@ dependencies = [
 
   # Channels
   "twilio>=9.3",
+  "sse-starlette>=2.1",
+  "itsdangerous>=2.2",
+  "python-dotenv>=1.0",
 
   # DB
   "sqlalchemy[asyncio]>=2.0",
   "psycopg[binary]>=3.2",
   "asyncpg>=0.30",
+
+  # ML
+  "joblib>=1.5.3",
+  "scikit-learn>=1.9.0",
 ]
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
 voice = [

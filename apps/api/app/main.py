@@ -1,6 +1,11 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# Load .env into os.environ so os.getenv() works across all modules
+load_dotenv(Path(__file__).resolve().parents[3] / ".env", override=False)
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -56,10 +61,7 @@ app = FastAPI(
 app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://han-ringleted-dubitatively.ngrok-free.dev",
-    ],
+    allow_origins=get_settings().allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

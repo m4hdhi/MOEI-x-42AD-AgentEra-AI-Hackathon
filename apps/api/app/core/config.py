@@ -36,6 +36,15 @@ class Settings(BaseSettings):
 
     ollama_host: str = "http://localhost:11434"
 
+    # Comma-separated extra CORS origins (e.g. your ngrok URL)
+    cors_extra_origins: str = ""
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        base = ["http://localhost:3000", "http://localhost:8000"]
+        extras = [o.strip() for o in self.cors_extra_origins.split(",") if o.strip()]
+        return base + extras
+
 
 @lru_cache
 def get_settings() -> Settings:
