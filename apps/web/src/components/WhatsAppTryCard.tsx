@@ -65,19 +65,21 @@ export function WhatsAppTryCard() {
             </a>{" "}
             to <code className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-800">{info.number}</code>
           </li>
+          {info.join_code ? (
+            <li>
+              <span className="font-semibold text-moei-ink">2.</span> Send the code:{" "}
+              <button
+                type="button"
+                onClick={copyJoin}
+                className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-xs text-emerald-800 hover:bg-emerald-100"
+              >
+                {info.join_code}
+                {copied ? <Check size={11} /> : <Copy size={11} />}
+              </button>
+            </li>
+          ) : null}
           <li>
-            <span className="font-semibold text-moei-ink">2.</span> Send the code:{" "}
-            <button
-              type="button"
-              onClick={copyJoin}
-              className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-xs text-emerald-800 hover:bg-emerald-100"
-            >
-              {info.join_code}
-              {copied ? <Check size={11} /> : <Copy size={11} />}
-            </button>
-          </li>
-          <li>
-            <span className="font-semibold text-moei-ink">3.</span> Ask any question about your ministry services.
+            <span className="font-semibold text-moei-ink">{info.join_code ? "3." : "2."}</span> Ask any question about your ministry services.
           </li>
         </ol>
       </div>
