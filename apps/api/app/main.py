@@ -26,6 +26,7 @@ from .routes import (
     notifications,
     recordings,
     search,
+    szhp,
     voice,
     whatsapp,
 )
@@ -85,6 +86,7 @@ app.include_router(copilot.router)
 app.include_router(exec_dashboard.router)
 # v2 endpoints for omnichannel CRM + proactive engagement + analytics + live activity
 app.include_router(crm.router)
+app.include_router(szhp.router)
 app.include_router(notifications.router)
 app.include_router(recordings.router)
 app.include_router(documents.router)

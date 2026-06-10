@@ -23,6 +23,7 @@ const NAV = [
 // "Staff sign-in" link in the footer.
 const APP_NAV: { href: string; label: string; external?: boolean }[] = [
   { href: "/chat", label: "Chat" },
+  { href: "/rescheduling", label: "Loan Rescheduling" },
   { href: "/mobile", label: "Mobile App" },
   { href: "/call", label: "Call Centre" },
   { href: "/sign", label: "Sign Language" },

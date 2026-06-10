@@ -28,6 +28,14 @@ This project is a single agentic AI layer that unifies all four channels.
 - Real-time voice tone & sentiment (calm / stressed / frustrated / satisfied) feeding the unified profile.
 
 **B · Operational execution**
+- **Housing loan arrears rescheduling — an autonomous officer.** Sign in → the Programme
+  retrieves your loan & arrears automatically → upload a salary certificate and confirm
+  authenticity → the agent analyses income, family size, per-member income, and repayment
+  capacity, applies the policy rules (20% deduction cap, repayment period ≤ original,
+  active-request auto-reject), and returns an **explainable recommendation with a confidence
+  score** in seconds — choosing to raise the instalment, move arrears to the loan's end, or
+  refer the exceptional cases to a human officer. Backed by the real 2023–2025 SZHP dataset
+  (~2,000 applications); ~86% auto-decided. Officer console shows the full assessment + audit trail.
 - Automated case creation, routing, tracking, and resolution (CRM).
 - **Solves, not just answers:** a status request looks up the customer's real case and replies with
   the case number, what's happening, days open, and SLA (on-track / overdue) — then auto-resolves
@@ -128,7 +136,7 @@ make infra-up
 for f in infra/postgres/init.sql infra/postgres/init_v2.sql infra/postgres/init_v3.sql \
          infra/postgres/init_v4_knowledge.sql infra/postgres/init_v5_recordings.sql \
          infra/postgres/init_v6_citizens.sql infra/postgres/init_v7_geo.sql \
-         infra/postgres/init_v8_dataset.sql; do
+         infra/postgres/init_v8_dataset.sql infra/postgres/init_v9_szhp.sql; do
   docker exec -i hassan-postgres psql -U hassan -d hassan < "$f"
 done
 
@@ -149,6 +157,9 @@ make web
 #    300 WhatsApp + 400 voice + 350 web sessions — all linked by Customer ID)
 uv run python scripts/import_dataset.py
 
+# 6a. Load the SZHP Loan Arrears Rescheduling dataset (2023–2025) + seed the officer queue
+uv run python scripts/import_szhp.py
+
 # 6b. (optional) extra synthetic content + knowledge crawl
 make synth                                       # synthetic cases + activity
 uv run python scripts/crawl_moei.py --max 250    # crawl moei.gov.ae into the knowledge base
@@ -162,6 +173,8 @@ Open **http://localhost:3000**.
 |---|---|---|
 | `/` | Citizen | MOEI-styled homepage + smart search + "Try on WhatsApp" |
 | `/chat` | Citizen | Chat assistant *(UAE PASS sign-in required)* |
+| `/rescheduling` | Citizen | Housing loan arrears rescheduling — instant officer-grade decision |
+| `/admin/rescheduling` | Staff | Rescheduling officer console — queue, assessment, approve/override/refer |
 | `/call` | Citizen | Voice contact centre — live tone, recording, case creation |
 | `/mobile` | Citizen | Mobile-app channel |
 | `/csat` | Citizen | Post-case satisfaction survey |

@@ -70,3 +70,6 @@ Claude.pdf
 
 # Stray root-level dataset downloads (the clean copy lives in data/moei/)
 /*.xlsx
+
+# Stray root-level docs
+/*.docx
