@@ -55,6 +55,11 @@ build-backend = "setuptools.build_meta"
 integrations = [
   "mem0ai>=0.1.50",
 ]
+# Opt-in Anthropic Claude path (LLMRole REASONER/COMPOSER/CRITIC when HASSAN_USE_CLAUDE=1).
+# Off by default — the default cascade is OpenAI → Groq. Install with: uv sync --extra anthropic
+anthropic = [
+  "langchain-anthropic>=0.3",
+]
 voice = [
   "livekit-agents>=0.11",
   "livekit-plugins-deepgram>=0.6",
