@@ -1,6 +1,6 @@
 name: hassan
 
-# One-command local stack: Postgres + Redis + Qdrant + Langfuse (self-hosted).
+# One-command local stack: Postgres + Redis + Langfuse (self-hosted).
 # Bring up:    docker compose -f infra/docker-compose.yml up -d
 # Tear down:   docker compose -f infra/docker-compose.yml down -v
 
@@ -39,10 +39,6 @@ services:
       timeout: 3s
       retries: 10
 
-  # qdrant: disabled — we'll re-enable when the knowledge layer needs embeddings.
-  # The MOEI catalog uses in-process keyword search (~14 services); doesn't need vectors.
-  # Re-add to bring back: `docker compose -f infra/docker-compose.yml --profile vector up qdrant`
-
   langfuse:
     image: langfuse/langfuse:2
     container_name: hassan-langfuse
@@ -66,4 +62,3 @@ services:
 volumes:
   hassan_pg:
   hassan_redis:
-  hassan_qdrant:

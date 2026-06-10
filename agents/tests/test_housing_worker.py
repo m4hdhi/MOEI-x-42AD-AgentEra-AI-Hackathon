@@ -10,7 +10,7 @@ async def test_housing_asks_for_missing_income_and_balance():
     """When critical info missing, worker should ask — not guess."""
     result = await run_housing_agent(
         text="I'm 4 months behind on my SZHP loan",
-        user_id="784-1990-0000001-0",
+        user_id="784-1990-1181000-4",
         language="en",
     )
     assert result.decision is None
@@ -23,7 +23,7 @@ async def test_housing_asks_for_missing_income_and_balance():
 async def test_housing_recommends_when_facts_present():
     result = await run_housing_agent(
         text="I'm 4 months behind on my SZHP loan, my salary is 20000 AED and the outstanding balance is 150000",
-        user_id="784-1990-0000001-0",
+        user_id="784-1990-1181000-4",
         language="en",
     )
     assert result.decision is not None
@@ -44,7 +44,7 @@ async def test_housing_extracts_facts_from_memory():
     ]
     result = await run_housing_agent(
         text="and my outstanding balance is 150000",
-        user_id="784-1990-0000001-0",
+        user_id="784-1990-1181000-4",
         language="en",
         memory_snippets=memory,
     )
@@ -67,7 +67,7 @@ async def test_housing_rejects_unknown_emirates_id():
 async def test_housing_arabic_draft_when_facts_present():
     result = await run_housing_agent(
         text="أحتاج تأجيل قسط السكن، راتبي 20000 درهم والرصيد المتبقي 150000",
-        user_id="784-1990-0000001-0",
+        user_id="784-1990-1181000-4",
         language="ar",
     )
     assert result.draft_ar
