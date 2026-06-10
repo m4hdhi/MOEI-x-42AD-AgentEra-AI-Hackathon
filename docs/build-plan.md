@@ -11,7 +11,7 @@ Adapted from the strategic playbook. **All build days complete. Day 18 = rest, t
 
 ## ✅ Days 3–4 — Supervisor + Channel Gateway
 
-- ✅ Role-based LLM cascade (Groq → Jais → Gemini → Ollama) with automatic fallback
+- ✅ Role-based LLM cascade (Groq → OpenAI/Claude → Gemini; Jais for Arabic) with automatic fallback
 - ✅ Pydantic structured output on Router and Composer
 - ✅ Langfuse tracing callback wired into every graph invocation
 - ✅ Gateway hardening: correlation-ID middleware, unified error envelope, gateway-side language detection
@@ -36,7 +36,7 @@ Adapted from the strategic playbook. **All build days complete. Day 18 = rest, t
 
 - ✅ Inter + Noto Sans Arabic via `next/font/google`
 - ✅ Native RTL through `dir="rtl"` toggle per message
-- ✅ Arabic turns routed to `LLMRole.ARABIC` (Jais → Gemini fallback → Ollama)
+- ✅ Arabic turns routed to `LLMRole.ARABIC` (Jais → Gemini fallback → Groq 70B)
 
 ## ✅ Days 10–11 — Voice channel
 
@@ -100,3 +100,17 @@ Adapted from the strategic playbook. **All build days complete. Day 18 = rest, t
 - ⏳ Live Langfuse traces — set `LANGFUSE_PUBLIC_KEY/SECRET_KEY` after `make infra-up`
 - ⏳ Live voice channel — `uv pip install -e '.[voice]'` + LiveKit creds
 - ⏳ Live WhatsApp — Twilio Sandbox webhook URL via ngrok
+
+---
+
+## Post-plan updates (hackathon week, aligned to the official docs)
+
+- **WhatsApp → Meta WhatsApp Cloud API** (supersedes the Day 12 Twilio path) — see
+  `README-WhatsApp-Meta.md`.
+- **Escalation is now dataset-grounded** (supersedes the Day 13 logic): on top of the immediate
+  triggers, `escalation_node` fuses the Service-Cases / CRM signals from the dataset — Anger Flag,
+  Very-Negative sentiment, SLA breach, Reopen Count > 1, Repeat-Escalator risk, Critical priority,
+  Gold/Platinum VIP — and escalates when **≥ 2** fire together (FAQ Q12/Q13). The reason + signals
+  persist to the case for the co-pilot. Tests: `agents/tests/test_escalation_rules.py`.
+- **Official MOEI service catalogue loaded** into the knowledge base (`scripts/import_services_catalog.py`,
+  run by `make dataset`) — 129 services, Arabic, FTS-searchable for smart-search + grounding.

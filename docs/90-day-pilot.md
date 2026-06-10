@@ -67,7 +67,7 @@
 | --- | --- | --- |
 | UAE PASS sandbox access slow | High | Run Phase 1 with synthetic identities + UAE PASS in parallel; budget 4 weeks |
 | Jais Khaliji quality variance | Medium | Native Emirati QA reviewer; fallback to Gemini 2.5 Pro for Arabic if Jais flagged |
-| LLM cost overrun at scale | Medium | Cerebras burst path for peaks; local Ollama for ≥ 30% of traffic by D90 |
+| LLM cost overrun at scale | Medium | Provider tiering (Groq/Cerebras), response caching + batching; evaluate UAE-hosted/on-prem model for steady-state traffic post-pilot |
 | Critic false positives blocking valid replies | Medium | Threshold tuning weekly; co-pilot review of every blocked draft for first 2 weeks |
 | Data residency clarification | Low–Medium | Pre-validated: Azure UAE North + Core42 both meet TDRA criteria |
 

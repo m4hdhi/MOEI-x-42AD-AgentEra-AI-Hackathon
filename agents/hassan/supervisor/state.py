@@ -45,6 +45,7 @@ class SupervisorState(TypedDict, total=False):
     # Escalation
     escalated: bool
     escalation_reason: str | None
+    escalation_signals: list[str]   # dataset-grounded triggers that fired (FAQ Q12/Q13)
 
     # Final
     reply: str

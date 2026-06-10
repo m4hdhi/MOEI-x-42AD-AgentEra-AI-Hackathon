@@ -11,7 +11,7 @@ hackathon toy and a production federal pilot.
 | --- | --- | --- |
 | Art. 4 — Consent | Personal data processing requires consent. | Consent screen shown before any data is collected; consent record persisted with timestamp, scope, and version (audit_log row, kind=`consent`). Right to withdraw exposed in the citizen UI. |
 | Art. 5 — Lawful processing | Limited to declared purposes. | Each tool call is logged with its purpose (e.g. `szhp_rules_engine: rescheduling assessment`). Data minimization built into the worker — only the parameters the rules engine needs are extracted from messages. |
-| Art. 6 — Cross-border transfer | Restricted unless adequate protection. | Production data residency: **Microsoft Azure UAE North / Core42 / G42 Cloud**. The local Ollama fallback is the contingency that demonstrates we can run fully on-prem on UAE soil. |
+| Art. 6 — Cross-border transfer | Restricted unless adequate protection. | Production data residency: **Microsoft Azure UAE North / Core42 / G42 Cloud**. The platform is fully containerised, so it can be deployed on-prem on UAE soil; LLM inference can move to a UAE-hosted/on-prem model when residency requires it. |
 | Art. 7 — Data subject rights | Right to access, correct, delete, object. | `/copilot/sessions/{user_id}/transcript` exposes everything we hold; `DELETE` endpoint on roadmap for Day 90. Mem0 supports per-user wipe. |
 | Art. 8 — Data security | Appropriate technical and organisational measures. | TLS everywhere; secrets in env (HashiCorp Vault in pilot); audit_log immutable; PII redacted at gateway and again at composer; prompt-injection detection at gateway. |
 | Art. 9 — Breach notification | Controller notifies the Data Office without undue delay. | Langfuse alerting webhook → Customer Happiness Centre SOC. Breach SOP in pilot RACI. |
@@ -57,7 +57,9 @@ real data once the production consent flow is signed off by MOEI's Customer Happ
 - [x] Bias check on every outbound LLM output (`agents/hassan/guardrails/bias.py`)
 - [x] Prompt-injection defense (`agents/hassan/guardrails/prompt_injection.py`)
 - [x] Synthetic demo data; no real citizen records
-- [x] On-prem fallback path (Ollama) demoed unplugged from Wi-Fi
+- [x] Provider-agnostic LLM cascade with automatic failover (no single-vendor lock-in)
+- [x] Fully containerised → deployable on-prem / UAE-region cloud for data residency
+- [ ] UAE-hosted / on-prem LLM inference for fully sovereign processing (pilot hardening)
 - [ ] Production consent screen (Day 1-30 of pilot)
 - [ ] DPIA approved by MOEI DPO (Day 1-30 of pilot)
 - [ ] Penetration test against gateway (Day 60-90 of pilot)

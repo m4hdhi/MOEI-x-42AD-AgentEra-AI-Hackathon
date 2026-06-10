@@ -15,17 +15,18 @@
 
 ## 0:00–0:30 — Hook
 
-> "Mariam, an Emirati citizen in Sharjah, is 4 months behind on her Sheikh Zayed Housing
-> Programme loan after a medical emergency. Today she calls the contact center — 40 minute
+> "Fatima Al Mansouri, an Emirati citizen in Ajman, is 4 months behind on her Sheikh Zayed Housing
+> Programme payments after a medical emergency. Today she calls the contact center — 40 minute
 > wait. Gets redirected. Sends WhatsApp. Sends email. Visits a branch. Five days minimum.
 > *That's the problem.*"
 
 ## 0:30–1:30 — Live cross-channel demo (3-pane split)
 
-1. **WhatsApp:** Mariam sends `أحتاج تأجيل قسط السكن`. Hassan replies in Arabic, asks for her salary slip.
+1. **WhatsApp:** Fatima sends `أحتاج تأجيل قسط السكن`. Hassan replies in Arabic, asks for her salary slip.
 2. **PDF upload:** Hassan OCRs (Docling) → risk scorer → SZHP rules engine → proposes 12-month plan.
-3. **Voice switch:** scan QR → joins LiveKit room. Mariam speaks in Arabic. Hassan greets her by name:
-   > "أهلًا مريم، أرى أنك بدأت طلب إعادة جدولة"
+3. **Voice switch:** scan QR → joins the voice channel (LiveKit when configured; text-as-voice
+   fallback keeps the demo bulletproof). Fatima speaks in Arabic. Hassan greets her by name:
+   > "أهلًا فاطمة، أرى أنك بدأت طلب إعادة جدولة"
    **This is the wow moment.** Sentiment overlay shows stress in her voice; Hassan adjusts tone.
 
 ## 1:30–2:30 — The brain
@@ -40,9 +41,10 @@ Click a node. Show the reasoning.
 
 ## 2:30–3:15 — Federal-grade differentiators
 
-- Audit trail panel (PDPL-aligned)
+- Audit trail panel (PDPL-aligned) — every decision step replayable
 - Bias detector flags a sample biased output; system rejects it
-- **Unplug Wi-Fi. Redo a turn. Still works.** (Ollama local fallback.)
+- **Kill the primary LLM key. Redo a turn. Still answers.** Provider-agnostic cloud cascade
+  (Groq → OpenAI/Claude → Gemini) fails over automatically; rules/heuristics degrade gracefully.
 - Co-pilot view: human agent sees live sentiment, suggested replies, full context — handling 3× cases.
 
 ## 3:15–4:00 — Scale + impact
@@ -77,11 +79,11 @@ Land the plane.
 | Question                          | Answer                                                                                                |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | PDPL compliance?                  | Synthetic demo data; article-by-article mapping in repo; minimization; right-to-explanation via audit |
-| Why Jais, not GPT-4?              | Sovereignty + UAE-aligned + on-prem. We use both; Jais for Arabic, frontier for reasoning             |
+| Why Jais, not GPT-4?              | Sovereignty + UAE-aligned, on-prem-capable in production. Jais for Arabic, frontier for reasoning     |
 | Hallucination on policy?          | Tools, not LLMs, encode policy. Agent calls `szhp_rules_engine`. Show the code                        |
-| Cost at scale?                    | Per-conversation cost well under AED 1 (Groq/Cerebras free→paid; local at 2× H100)                    |
+| Cost at scale?                    | Per-conversation cost well under AED 1 (Groq/Cerebras free→paid tiers; cache + batch at scale)        |
 | Khaliji vs MSA vs expat?          | Jais handles MSA + Khaliji; gateway language detect; Hindi/Urdu/Tagalog fallback via Gemini           |
-| Supervisor LLM down?              | Demo the local Ollama fallback **live**                                                               |
+| Supervisor LLM down?              | Auto-failover across cloud providers (Groq→OpenAI/Claude→Gemini); heuristics if all are down          |
 | Multi-agent or single-agent?      | Genuine multi-agent: each worker has own context, tools, system prompt, parallel — show parallel trace|
 
 ## Pivot rules

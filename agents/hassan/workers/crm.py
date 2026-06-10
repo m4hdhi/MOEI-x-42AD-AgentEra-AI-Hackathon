@@ -72,6 +72,7 @@ def upsert_case(
     sentiment: float | None,
     escalated: bool,
     correlation_id: str | None,
+    escalation_reason: str | None = None,
 ) -> dict[str, Any] | None:
     """Create-or-update a case for the turn. Reuses an open case for the same (user, service)
     within the last 24h; otherwise opens a fresh one with a human-readable number.
@@ -110,12 +111,15 @@ def upsert_case(
                     SET sentiment = COALESCE(%s, sentiment),
                         status = %s,
                         priority = %s,
+                        escalated = %s,
+                        escalation_reason = COALESCE(%s, escalation_reason),
                         correlation_id = COALESCE(%s, correlation_id),
                         updated_at = NOW()
                     WHERE id = %s
                     RETURNING id, case_number, status, priority, sentiment, created_at, updated_at
                     """,
-                    (sentiment, new_status, priority, correlation_id, existing["id"]),
+                    (sentiment, new_status, priority, escalated, escalation_reason,
+                     correlation_id, existing["id"]),
                 )
                 row = cur.fetchone()
                 logger.info(f"crm: updated case {row['case_number']} (status={row['status']})")
@@ -129,12 +133,14 @@ def upsert_case(
             cur.execute(
                 """
                 INSERT INTO cases (case_number, user_id, user_name, channel, intent, service,
-                                   title, description, priority, status, sentiment, correlation_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                   title, description, priority, status, sentiment, escalated,
+                                   escalation_reason, correlation_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id, case_number, status, priority, sentiment, created_at, updated_at
                 """,
                 (case_number, user_id, user_name, channel, intent, service,
-                 title, user_text[:1000], priority, status, sentiment, correlation_id),
+                 title, user_text[:1000], priority, status, sentiment, escalated,
+                 escalation_reason, correlation_id),
             )
             row = cur.fetchone()
             logger.info(f"crm: created {row['case_number']} ({priority} {status})")

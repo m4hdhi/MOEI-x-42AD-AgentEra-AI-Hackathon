@@ -3,24 +3,43 @@
 A tight 6–7 minute walkthrough that shows **one citizen carried across every channel**, the
 **employee co-pilot**, and the **leadership view** — mapped to the evaluation rubric.
 
-> Persona: **Fatima Al Blooshi**, a citizen with a Sheikh Zayed Housing Programme case.
-> Pre-req: API on :8000, web on :3000, infra up. Sign in via UAE PASS mock when prompted.
+> Persona: **Fatima Al Mansouri** — an Emirati citizen in **Ajman**, flagged **Repeat Escalator**,
+> who has already reached MOEI across WhatsApp, voice, and web (8 / 11 / 3 interactions) about her
+> **Sheikh Zayed Housing Programme** case. Sign in via the UAE PASS mock and pick **Fatima Al
+> Mansouri (784199011810004)** from the "demo identities" toggle on the login screen.
+> Pre-req: `make up` (API :8000, web :3000, infra up, dataset **and** the official service
+> catalogue loaded — `make dataset` does both).
 
 ---
 
-## Act 1 — One citizen, every channel (Agentic Depth · 25)
+## Act 1 — One citizen across every channel, never repeating (Agentic Depth · 25)
 
-1. **WhatsApp** — From the homepage, scan the "Try on WhatsApp" QR (or open `/chat`).
-   Sign in with UAE PASS. Ask: *"I'm behind on my Sheikh Zayed housing loan, what can I do?"*
-   → The assistant answers in your language, **creates a case**, and cites the official source.
-2. **Voice** — Open `/call`, press the green button, say the same thing.
-   → Watch the **live tone meter** react, the transcript build, and *"Logged as case MOEI-CASE-…"*
-   appear. Hang up → the call is **recorded, transcribed, summarised and quality-scored**.
-3. **Mobile** — Open `/mobile`. Ask *"what's the status of my request?"*
-   → It already knows Fatima and her open case — **no repeating information**. This is the
-   "same intelligent representative across the journey" the brief asks for.
+This is the heart of the challenge (FAQ Q7/Q8): start on the **website**, follow up on
+**WhatsApp**, hand off to a **human** — the citizen never re-explains, the AI never loses context.
 
-**Say:** *"One profile, one memory, four channels — the citizen never re-explains anything."*
+1. **Website — open a request.** From the homepage `/`, sign in with UAE PASS (Fatima), then open
+   `/chat` and type *"I'm behind on my Sheikh Zayed housing payments after a medical emergency —
+   what are my options?"*
+   → The assistant detects the intent, runs the **SZHP rules engine** (deterministic, not an LLM
+   guess), proposes a rescheduling plan, **creates a case** (`MOEI-CASE-…`), and cites the official
+   MOEI service. *(Q7: web intent → case · Housing Assistance is FAQ Q4's #1 service)*
+2. **WhatsApp — check status, no re-introduction.** Open the WhatsApp surface (scan the homepage
+   QR, or reopen `/chat`) and ask *"What's the status of my request?"*
+   → It **already knows Fatima** — it pulls her unified profile by Customer ID and returns the real
+   case status with SLA timing, **without asking who she is.** *(Q7: cross-channel continuity)*
+   > Voice (`/call`) and mobile (`/mobile`) ride the same brain — the live tone meter, transcript,
+   > and case logging all read and write the one profile.
+3. **Proactive update — before she has to chase.** Her SLA-breached case triggers a **proactive
+   status update on her preferred channel** (show it via Admin → Citizens → Fatima → *Send status
+   update*, logged to her timeline). *(Q7: proactive engagement)*
+4. **Predicted escalation → human with full history.** Fatima is flagged **Repeat Escalator** with
+   a reopened case. On a perfectly **calm** status turn, the system **predicts the escalation before
+   she complains** — two dataset signals fire (*repeat_escalator + reopened*, per FAQ Q12/Q13) — and
+   routes her to a human, who opens the co-pilot to her **entire cross-channel history on one screen.**
+   *(Q7: human handoff · Innovation: predictive complaint prevention)*
+
+**Say:** *"One profile, one memory — she switched channels and repeated nothing. And we didn't wait
+for her to get angry: the unified profile told us she was about to escalate, so we acted first."*
 
 ## Act 2 — The employee co-pilot (Agent enablement)
 
@@ -67,6 +86,10 @@ operations — with a full audit trail behind every decision."*
 | Technical Excellence (20) | Whole demo — CRM + WhatsApp + voice + mobile + co-pilot + real-time analytics + ML + CV |
 | Demo & Storytelling (15) | This script — one journey across channels + employee + leadership |
 | Feasibility & Execution (15) | See `docs/feasibility-roadmap.md` |
+
+> **Scope note:** the FAQ marks Part C (co-pilot + leadership dashboard) as *out of scope*, so
+> **Act 1 (Parts A+B) is the headline** — Acts 2–3 are supporting evidence for Technical
+> Excellence + Demo, not the main act. Open and close on cross-channel continuity.
 
 ## One-line message for judges
 > *We didn't build a chatbot. We built MOEI's unified digital brain — it knows the citizen,

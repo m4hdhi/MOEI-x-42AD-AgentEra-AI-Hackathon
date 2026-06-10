@@ -110,6 +110,7 @@ infra/
 scripts/
   crawl_moei.py           crawl moei.gov.ae → knowledge_documents (EN/AR)
   import_dataset.py       loads the official MOEI dataset (CRM, cases, channel logs)
+  import_services_catalog.py  loads the ministry's official service catalogue into the KB
   seed_omnichannel.py     synthetic demo data (cases, notifications, activity)
 docs/                     PDPL mapping, 90-day pilot, deck outline
 ```
@@ -148,6 +149,10 @@ make web
 # 6. Load the official MOEI Omnichannel dataset (200 CRM profiles, 250 cases,
 #    300 WhatsApp + 400 voice + 350 web sessions — all linked by Customer ID)
 uv run python scripts/import_dataset.py
+
+# 6a. Load the ministry's official service catalogue into the knowledge base
+#     (Arabic, FTS-searchable; `make dataset` runs this automatically)
+uv run python scripts/import_services_catalog.py
 
 # 6b. (optional) extra synthetic content + knowledge crawl
 make synth                                       # synthetic cases + activity

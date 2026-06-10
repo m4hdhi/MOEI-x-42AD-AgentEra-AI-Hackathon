@@ -513,29 +513,112 @@ async def critic_node(state: SupervisorState) -> dict:
         return {"critic_score": 0.85, "critic_notes": "critic unavailable; pass-through"}
 
 
-def escalation_node(state: SupervisorState) -> dict:
-    """Decide co-pilot escalation. Function of intent, critic score, confidence, recommendation.
+def _dataset_escalation_signals(user_id: str, state: SupervisorState) -> tuple[list[str], dict]:
+    """Collect the dataset-grounded escalation signals (FAQ Q12/Q13).
 
-    Escalate when:
-    - citizen explicitly asks for human
-    - critic score below 0.65
-    - rules engine recommended manual_review
-    - router confidence is very low (<0.4)
+    Mirrors the Service Cases + CRM sheets exactly: live-turn Anger Flag and Very-Negative
+    sentiment (this message), plus cross-channel history from Postgres — SLA breach, Reopen
+    Count > 1, Repeat-Escalator risk flag, Critical priority, and Gold/Platinum VIP tier.
+    Best-effort: returns whatever it can read, never raises (DB down → live-turn signals only).
+    """
+    fired: list[str] = []
+    detail: dict = {}
+
+    # Live-turn signals (this message), from the sentiment node.
+    if state.get("emotion") == "angry":
+        fired.append("anger_flag")
+    sentiment = state.get("sentiment")
+    if sentiment is not None and sentiment <= 0.2:
+        fired.append("very_negative_sentiment")
+
+    # Profile + open-case signals (cross-channel history), keyed by Customer ID via user_id.
+    if user_id:
+        try:
+            import sys
+            from pathlib import Path
+            _api = Path(__file__).resolve().parents[3] / "apps" / "api"
+            if str(_api) not in sys.path:
+                sys.path.insert(0, str(_api))
+            from app.core.db import db_cursor  # type: ignore[import-not-found]
+
+            with db_cursor() as cur:
+                cur.execute(
+                    "SELECT risk_flag, vip_tier FROM citizens WHERE user_id = %s", (user_id,)
+                )
+                prof = cur.fetchone() or {}
+                if (prof.get("risk_flag") or "").strip().lower() == "repeat escalator":
+                    fired.append("repeat_escalator")
+                    detail["risk_flag"] = prof.get("risk_flag")
+                if (prof.get("vip_tier") or "").strip() in ("Gold", "Platinum"):
+                    fired.append(f"vip_{prof['vip_tier'].strip().lower()}")
+                    detail["vip_tier"] = prof.get("vip_tier")
+
+                # Worst live case first: most reopens, then SLA-breached, then newest.
+                cur.execute(
+                    """SELECT priority, sla_met, COALESCE(reopen_count, 0) AS reopen_count
+                       FROM cases
+                       WHERE user_id = %s AND status IN ('open', 'in_progress', 'escalated')
+                       ORDER BY COALESCE(reopen_count, 0) DESC, (sla_met = 'No') DESC,
+                                created_at DESC
+                       LIMIT 1""",
+                    (user_id,),
+                )
+                case = cur.fetchone() or {}
+                if (case.get("priority") or "").strip().lower() == "critical":
+                    fired.append("critical_priority")
+                if (case.get("sla_met") or "").strip() == "No":
+                    fired.append("sla_breached")
+                if (case.get("reopen_count") or 0) > 1:
+                    fired.append("reopened")
+                    detail["reopen_count"] = case.get("reopen_count")
+        except Exception as e:
+            logger.debug(f"escalation signals lookup skipped: {e}")
+
+    return fired, detail
+
+
+def escalation_node(state: SupervisorState) -> dict:
+    """Decide human handoff in two layers.
+
+    Layer 1 — immediate, unconditional triggers: explicit citizen request, high urgency
+    (emergency / vulnerable person), a critic-flagged answer, the rules engine asking for
+    manual review, or very low router confidence.
+
+    Layer 2 — dataset-grounded signal fusion (FAQ Q12/Q13): Anger Flag, Very-Negative
+    sentiment, SLA breach, Reopen Count > 1, Repeat-Escalator risk, Critical priority, and
+    Gold/Platinum VIP tier. Per the guidance, a single negative sentiment is *not* enough —
+    we escalate only when >= 2 signals fire together (e.g. negative sentiment + SLA breach).
+    Below the threshold we still record which signals fired so the co-pilot can show them.
     """
     if state.get("intent") == "escalate_to_human":
-        return {"escalated": True, "escalation_reason": "explicit citizen request"}
-    # Emotion-aware: a high-urgency citizen (emergency, vulnerable person) is fast-tracked.
+        return {"escalated": True, "escalation_reason": "explicit citizen request",
+                "escalation_signals": ["explicit_request"]}
     if state.get("urgency") == "high":
         emo = state.get("emotion", "neutral")
-        return {"escalated": True, "escalation_reason": f"high urgency ({emo}) — priority human handoff"}
+        return {"escalated": True,
+                "escalation_reason": f"high urgency ({emo}) — priority human handoff",
+                "escalation_signals": ["high_urgency"]}
     if state.get("critic_score", 1.0) < 0.65:
-        return {"escalated": True, "escalation_reason": f"critic flagged ({state.get('critic_notes', '')})"}
+        return {"escalated": True,
+                "escalation_reason": f"critic flagged ({state.get('critic_notes', '')})",
+                "escalation_signals": ["critic_flagged"]}
     housing = state.get("housing_decision") or {}
     if housing.get("recommendation") == "manual_review":
-        return {"escalated": True, "escalation_reason": "rules engine: manual review"}
+        return {"escalated": True, "escalation_reason": "rules engine: manual review",
+                "escalation_signals": ["manual_review"]}
     if state.get("confidence", 1.0) < 0.4:
-        return {"escalated": True, "escalation_reason": "low router confidence"}
-    return {"escalated": False, "escalation_reason": None}
+        return {"escalated": True, "escalation_reason": "low router confidence",
+                "escalation_signals": ["low_confidence"]}
+
+    fired, _detail = _dataset_escalation_signals(state.get("user_id", ""), state)
+    if len(fired) >= 2:
+        logger.info(f"escalation: {len(fired)} signals fired → human handoff ({fired})")
+        return {
+            "escalated": True,
+            "escalation_reason": "predicted escalation — signals: " + ", ".join(fired),
+            "escalation_signals": fired,
+        }
+    return {"escalated": False, "escalation_reason": None, "escalation_signals": fired}
 
 
 async def composer_node(state: SupervisorState) -> dict:
@@ -916,6 +999,7 @@ async def persist_turn_node(state: SupervisorState) -> dict:
             sentiment=sentiment,
             escalated=bool(state.get("escalated")),
             correlation_id=correlation_id,
+            escalation_reason=state.get("escalation_reason"),
         )
 
         # Record the decision trail (one row per node) for the Audit Trail / right-to-explanation.

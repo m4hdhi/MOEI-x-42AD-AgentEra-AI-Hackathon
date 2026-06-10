@@ -39,6 +39,37 @@ New files:
 
 ---
 
+## Step 0.5 — Set the WhatsApp display name (one-time, needs Meta approval)
+
+By default, recipients see the raw phone number until Meta approves a **Display Name** for the
+business number. Once approved, every user sees "MOEI Assistant (Demo)" automatically — no contact
+saving required.
+
+**Fastest path (Meta Dashboard):**
+
+1. [business.facebook.com](https://business.facebook.com) → **WhatsApp Manager** → **Phone Numbers**
+2. Three-dot menu next to +971 54 184 1533 → **Edit profile**
+3. Set **Display Name** to `MOEI Assistant (Demo)` → Submit
+4. Meta reviews within 1–3 business days (often same-day for test apps)
+
+> **Note:** The display name itself can **only** be set in the WhatsApp Manager dashboard —
+> there is no Cloud API endpoint to request it. `make wa-profile` only *reports* the current
+> verified name; it cannot change it.
+
+**Helper script:**
+
+```bash
+make wa-profile   # requires META_WHATSAPP_ACCESS_TOKEN + META_WHATSAPP_PHONE_NUMBER_ID in .env
+```
+
+This prints the current verified display name and sets the business profile About text, category,
+and website immediately (no review needed).
+
+> **Hackathon demo tip:** If approval hasn't arrived yet, pre-save the contact as
+> "MOEI Assistant (Demo)" on every demo device. The chatbot logic is unaffected either way.
+
+---
+
 ## Step 1 — Clone and configure
 
 ```bash
