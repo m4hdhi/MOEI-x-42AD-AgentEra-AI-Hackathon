@@ -40,29 +40,95 @@ from .state import SupervisorState
 
 _SERVICE_KEYWORDS: dict[Service, dict[str, set[str]]] = {
     "housing": {
-        "en": {"loan", "szhp", "arrears", "rescheduling", "reschedule",
-               "installment", "instalment", "mortgage", "behind on my",
-               "behind on payments", "missed payment", "late payment"},
-        "ar": {"قرض", "تأجيل", "قسط", "متأخرات", "إعادة جدولة"},
+        "en": {
+            "loan",
+            "szhp",
+            "arrears",
+            "rescheduling",
+            "reschedule",
+            "installment",
+            "instalment",
+            "mortgage",
+            "behind on my",
+            "behind on payments",
+            "missed payment",
+            "late payment",
+            # Housing-unit / maintenance context (not payment) — still a housing-service request.
+            "housing unit",
+            "housing maintenance",
+            "my housing",
+            "housing unit maintenance",
+            "ceiling",
+            "crack in",
+        },
+        "ar": {
+            "قرض",
+            "تأجيل",
+            "قسط",
+            "متأخرات",
+            "إعادة جدولة",
+            "وحدتي السكنية",
+            "وحدة سكنية",
+            "صيانة المنزل",
+            "تصدع",
+        },
     },
     "energy": {
-        "en": {"power", "electricity", "outage", "blackout", "water bill", "tariff",
-               "dewa", "fewa", "sewa", "aadc", "kahramaa", "petrol", "petroleum", "gas"},
+        "en": {
+            "power",
+            "electricity",
+            "outage",
+            "blackout",
+            "water bill",
+            "tariff",
+            "dewa",
+            "fewa",
+            "sewa",
+            "aadc",
+            "kahramaa",
+            "petrol",
+            "petroleum",
+            "gas",
+        },
         "ar": {"كهرباء", "ماء", "تعرفة", "انقطاع", "وقود", "بترول", "غاز"},
     },
     "maritime": {
-        "en": {"boat", "vessel", "ship", "marine", "maritime", "port", "harbor", "harbour",
-               "seafarer", "pleasure boat"},
+        "en": {
+            "boat",
+            "vessel",
+            "ship",
+            "marine",
+            "maritime",
+            "port",
+            "harbor",
+            "harbour",
+            "seafarer",
+            "pleasure boat",
+        },
         "ar": {"قارب", "سفينة", "بحري", "ميناء", "بحار"},
     },
     "transport": {
-        "en": {"transportation permit", "transport permit", "vehicle permit", "national transportation",
-               "truck", "driver license", "driver licence", "fleet"},
+        "en": {
+            "transportation permit",
+            "transport permit",
+            "vehicle permit",
+            "national transportation",
+            "truck",
+            "driver license",
+            "driver licence",
+            "fleet",
+        },
         "ar": {"تصريح نقل", "نقل وطني", "مركبة", "رخصة قيادة", "شاحنة"},
     },
     "infrastructure": {
-        "en": {"infrastructure", "construction permit", "geological", "road permit",
-               "public works", "survey"},
+        "en": {
+            "infrastructure",
+            "construction permit",
+            "geological",
+            "road permit",
+            "public works",
+            "survey",
+        },
         "ar": {"بنية تحتية", "تصريح بناء", "جيولوجيا", "أعمال عامة", "مسح"},
     },
 }
@@ -99,7 +165,7 @@ def _format_citations_footer(citations: list[dict], language: str, channel: str)
     if channel == "voice":
         # Voice TTS reads out loud — skip URLs, just name the sources.
         head = "\n\n(للمزيد:" if language == "ar" else "\n\n(More info from:"
-        body = ", ".join(c['title'] for c in citations)
+        body = ", ".join(c["title"] for c in citations)
         return f"{head} {body})"
     # Web + mobile: markdown links rendered as clickable pills by the UI.
     head = "\n\n**أكثر:**" if language == "ar" else "\n\n**More info:**"
@@ -114,20 +180,74 @@ def _keyword_intent(text: str) -> str | None:
     Ensures complaints always reach the Complaints Agent regardless of which service it's about.
     """
     tl = text.lower()
-    if any(k in tl for k in ("complaint", "unacceptable", "horrible", "terrible", "disappointed",
-                              "ridiculous", "furious", "angry", "useless", "worst", "no one replies",
-                              "nobody replies", "still waiting", "fed up")) \
-       or any(k in text for k in ("شكوى", "غير مقبول", "سيئ", "غاضب", "محبط")):
+    if any(
+        k in tl
+        for k in (
+            "complaint",
+            "unacceptable",
+            "horrible",
+            "terrible",
+            "disappointed",
+            "ridiculous",
+            "furious",
+            "angry",
+            "useless",
+            "worst",
+            "no one replies",
+            "nobody replies",
+            "still waiting",
+            "fed up",
+        )
+    ) or any(k in text for k in ("شكوى", "غير مقبول", "سيئ", "غاضب", "محبط")):
         return "complaint"
-    if any(k in tl for k in ("thank", "appreciate", "excellent", "great service", "well done")) \
-       or any(k in text for k in ("شكرا", "ممتاز", "أحسنتم")):
+    if any(
+        k in tl for k in ("thank", "appreciate", "excellent", "great service", "well done")
+    ) or any(k in text for k in ("شكرا", "ممتاز", "أحسنتم")):
         return "appreciation"
-    if any(k in tl for k in ("i suggest", "you should", "why don't you", "i recommend", "it would be better")) \
-       or "اقترح" in text:
+    if (
+        any(
+            k in tl
+            for k in (
+                "i suggest",
+                "you should",
+                "why don't you",
+                "i recommend",
+                "it would be better",
+            )
+        )
+        or "اقترح" in text
+    ):
         return "suggestion"
-    if any(k in tl for k in ("status of", "where is my", "track my", "any update", "has my", "is my application",
-                             "my request", "my application", "approved yet")) \
-       or any(k in text for k in ("حالة طلبي", "أين طلبي", "تتبع")):
+    if any(
+        k in tl
+        for k in (
+            "status of",
+            "where is my",
+            "track my",
+            "any update",
+            "update on",
+            "latest on",
+            "latest update",
+            "has my",
+            "is my application",
+            "my request",
+            "my application",
+            "approved yet",
+        )
+    ) or any(
+        k in text
+        for k in (
+            "حالة طلبي",
+            "أين طلبي",
+            "تتبع",
+            "آخر تحديث",
+            "تحديث على طلب",
+            "تحديث طلبي",
+            "على طلبي",
+            "مستجدات طلب",
+            "وين وصل طلب",
+        )
+    ):
         return "status_check"
     return None
 
@@ -158,6 +278,7 @@ def _keyword_router(text: str) -> tuple[Service, float, str]:
 
 # ----- Nodes -------------------------------------------------------------------
 
+
 async def router_node(state: SupervisorState) -> dict:
     """LLM-backed intent + service classifier with structured output and keyword fallback.
 
@@ -177,7 +298,9 @@ async def router_node(state: SupervisorState) -> dict:
     # grievances always reach the Complaints Agent, even with no service keyword.
     forced_intent = _keyword_intent(text)
     if forced_intent:
-        logger.info(f"router(intent-override): intent={forced_intent} service={kw_service} lang={detected_lang}")
+        logger.info(
+            f"router(intent-override): intent={forced_intent} service={kw_service} lang={detected_lang}"
+        )
         return {
             "intent": forced_intent,
             "service": kw_service,
@@ -192,13 +315,22 @@ async def router_node(state: SupervisorState) -> dict:
             f"router(kw-fast): service={kw_service} conf={kw_conf} lang={detected_lang} (LLM skipped)"
         )
         tl = text.lower()
-        if any(k in tl for k in ("thank", "appreciate", "excellent", "great service")) or any(k in text for k in ("شكرا", "ممتاز")):
+        if any(k in tl for k in ("thank", "appreciate", "excellent", "great service")) or any(
+            k in text for k in ("شكرا", "ممتاز")
+        ):
             intent = "appreciation"
-        elif any(k in tl for k in ("suggest", "you should", "why don't you", "recommend")) or "اقترح" in text:
+        elif (
+            any(k in tl for k in ("suggest", "you should", "why don't you", "recommend"))
+            or "اقترح" in text
+        ):
             intent = "suggestion"
-        elif any(k in tl for k in ("complaint", "unacceptable", "horrible", "disappointed", "broken")) or any(k in text for k in ("شكوى", "غير مقبول")):
+        elif any(
+            k in tl for k in ("complaint", "unacceptable", "horrible", "disappointed", "broken")
+        ) or any(k in text for k in ("شكوى", "غير مقبول")):
             intent = "complaint"
-        elif any(k in tl for k in ("behind", "arrears", "late", "status", "where is", "track")) or any(k in text for k in ("متأخر", "تأخر", "حالة")):
+        elif any(
+            k in tl for k in ("behind", "arrears", "late", "status", "where is", "track")
+        ) or any(k in text for k in ("متأخر", "تأخر", "حالة")):
             intent = "status_check"
         else:
             intent = "service_request"
@@ -300,6 +432,7 @@ def _lookup_open_cases(user_id: str) -> list[dict]:
     try:
         import sys
         from pathlib import Path
+
         _api = Path(__file__).resolve().parents[3] / "apps" / "api"
         if str(_api) not in sys.path:
             sys.path.insert(0, str(_api))
@@ -310,7 +443,8 @@ def _lookup_open_cases(user_id: str) -> list[dict]:
                 """SELECT case_number, service, service_category, sub_service, status, priority,
                           sla_target_hrs, sla_met, resolution_time_hrs, assigned_team,
                           created_at, date_closed
-                   FROM cases WHERE user_id = %s AND service <> 'unknown'
+                   FROM cases WHERE user_id = %s
+                     AND (service <> 'unknown' OR status IN ('open','in_progress','escalated'))
                    ORDER BY (status IN ('open','in_progress','escalated')) DESC, created_at DESC
                    LIMIT 5""",
                 (user_id,),
@@ -334,23 +468,33 @@ def _status_draft(cases: list[dict], language: str) -> str:
     """Compose a concrete, resolved status answer from the customer's real cases."""
     ar = language == "ar"
     if not cases:
-        return ("لا أرى أي طلبات مفتوحة على حسابك حالياً — كل شيء محدث. هل ترغب في بدء طلب جديد؟"
-                if ar else
-                "I don't see any open requests on your account right now — you're all up to date. "
-                "Would you like to start a new request?")
-    active = [c for c in cases if c.get("status") in ("open", "in_progress", "escalated")] or cases[:1]
+        return (
+            "لا أرى أي طلبات مفتوحة على حسابك حالياً — كل شيء محدث. هل ترغب في بدء طلب جديد؟"
+            if ar
+            else "I don't see any open requests on your account right now — you're all up to date. "
+            "Would you like to start a new request?"
+        )
+    active = [c for c in cases if c.get("status") in ("open", "in_progress", "escalated")] or cases[
+        :1
+    ]
     lines = ["إليك آخر المستجدات على طلباتك:" if ar else "Here's the latest on your requests:"]
     now = datetime.now(timezone.utc)
     for c in active[:3]:
-        label = c.get("sub_service") or c.get("service_category") or (c.get("service") or "request").title()
-        st = (c.get("status") or "open")
+        label = (
+            c.get("sub_service")
+            or c.get("service_category")
+            or (c.get("service") or "request").title()
+        )
+        st = c.get("status") or "open"
         human = _STATUS_HUMAN.get(st, (st, st))[1 if ar else 0]
         opened = c.get("created_at")
         days = ""
         if opened:
             try:
                 d = (now - opened).days
-                days = (f" — فُتح قبل {d} يوم" if ar else f" — opened {d} day{'s' if d != 1 else ''} ago")
+                days = (
+                    f" — فُتح قبل {d} يوم" if ar else f" — opened {d} day{'s' if d != 1 else ''} ago"
+                )
             except Exception:
                 pass
         sla = ""
@@ -359,15 +503,26 @@ def _status_draft(cases: list[dict], language: str) -> str:
             try:
                 elapsed_h = (now - opened).total_seconds() / 3600
                 on_track = elapsed_h <= float(tgt)
-                sla = (f" · الهدف {int(tgt)} ساعة ({'ضمن المدة' if on_track else 'تجاوز المدة'})"
-                       if ar else
-                       f" · target {int(tgt)}h ({'on track' if on_track else 'overdue'})")
+                sla = (
+                    f" · الهدف {int(tgt)} ساعة ({'ضمن المدة' if on_track else 'تجاوز المدة'})"
+                    if ar
+                    else f" · target {int(tgt)}h ({'on track' if on_track else 'overdue'})"
+                )
             except Exception:
                 pass
         cn = c.get("case_number", "")
-        lines.append((f"• {cn} — {label}: {human}{days}{sla}" if not ar else f"• {cn} — {label}: {human}{days}{sla}"))
-    tail = ("هل ترغب أن أرسل لك تحديثاً عند تغيّر الحالة؟" if ar
-            else "Would you like me to notify you the moment this status changes?")
+        lines.append(
+            (
+                f"• {cn} — {label}: {human}{days}{sla}"
+                if not ar
+                else f"• {cn} — {label}: {human}{days}{sla}"
+            )
+        )
+    tail = (
+        "هل ترغب أن أرسل لك تحديثاً عند تغيّر الحالة؟"
+        if ar
+        else "Would you like me to notify you the moment this status changes?"
+    )
     lines.append("")
     lines.append(tail)
     return "\n".join(lines)
@@ -388,8 +543,11 @@ async def dispatcher_node(state: SupervisorState) -> dict:
 
     if intent == "escalate_to_human":
         draft = "Connecting you with a human agent now. They'll have your full context."
-        return {"worker_draft": draft, "tool_calls": [{"tool": "escalate", "args": {"reason": "explicit_request"}}],
-                "handled_by": "Escalation Agent"}
+        return {
+            "worker_draft": draft,
+            "tool_calls": [{"tool": "escalate", "args": {"reason": "explicit_request"}}],
+            "handled_by": "Escalation Agent",
+        }
 
     # Status checks are SOLVED, not deflected: look up the customer's real cases and answer with
     # concrete status + SLA. This turn then auto-resolves (no human needed).
@@ -410,6 +568,7 @@ async def dispatcher_node(state: SupervisorState) -> dict:
     knowledge_hits: list[dict] = []
     try:
         from ..workers.knowledge import search as kb_search
+
         knowledge_hits = kb_search(text, lang=language, top_k=3)
     except Exception as e:
         logger.debug(f"knowledge: skipped ({e})")
@@ -418,20 +577,38 @@ async def dispatcher_node(state: SupervisorState) -> dict:
     if intent == "complaint":
         result_c = await run_complaints_agent(text=text, language=language, memory_snippets=memory)
         draft = result_c.draft_ar if language == "ar" else result_c.draft_en
-        return {"worker_draft": draft, "tool_calls": result_c.tool_calls,
-                "knowledge_hits": knowledge_hits, "handled_by": "Complaints Agent"}
+        return {
+            "worker_draft": draft,
+            "tool_calls": result_c.tool_calls,
+            "knowledge_hits": knowledge_hits,
+            "handled_by": "Complaints Agent",
+        }
 
     if service == "housing":
         # The HousingAgent's full rules-engine flow is meant for actual payment problems.
         # Informational housing questions ("how do I apply for SZHP?") should answer from
         # the catalog instead of asking the citizen for Emirates ID + salary + balance.
         payment_words = (
-            "behind", "arrears", "late", "reschedul", "missed", "can't pay", "cannot pay",
-            "loan", "installment", "instalment", "mortgage",
-            "متأخر", "تأخر", "قسط", "قرض", "تأجيل",
+            "behind",
+            "arrears",
+            "late",
+            "reschedul",
+            "missed",
+            "can't pay",
+            "cannot pay",
+            "loan",
+            "installment",
+            "instalment",
+            "mortgage",
+            "متأخر",
+            "تأخر",
+            "قسط",
+            "قرض",
+            "تأجيل",
         )
-        is_payment_problem = any(k in text.lower() for k in payment_words if k.isascii()) or \
-                             any(k in text for k in payment_words if not k.isascii())
+        is_payment_problem = any(k in text.lower() for k in payment_words if k.isascii()) or any(
+            k in text for k in payment_words if not k.isascii()
+        )
 
         if is_payment_problem:
             result_h = await run_housing_agent(
@@ -448,8 +625,12 @@ async def dispatcher_node(state: SupervisorState) -> dict:
         # Informational housing query → general worker with catalog grounding (fast path)
         result_g = await run_general_agent(text=text, language=language)
         draft = result_g.draft_ar if language == "ar" else result_g.draft_en
-        return {"worker_draft": draft, "tool_calls": result_g.tool_calls, "knowledge_hits": knowledge_hits,
-                "handled_by": "Housing Agent"}
+        return {
+            "worker_draft": draft,
+            "tool_calls": result_g.tool_calls,
+            "knowledge_hits": knowledge_hits,
+            "handled_by": "Housing Agent",
+        }
 
     # Domain-specific workers — all real responders grounded in the MOEI catalog
     worker_map = {
@@ -461,15 +642,23 @@ async def dispatcher_node(state: SupervisorState) -> dict:
     if service in worker_map:
         result = await worker_map[service](text=text, language=language, memory_snippets=memory)
         draft = result.draft_ar if language == "ar" else result.draft_en
-        return {"worker_draft": draft, "tool_calls": result.tool_calls, "knowledge_hits": knowledge_hits,
-                "handled_by": f"{service.capitalize()} Agent"}
+        return {
+            "worker_draft": draft,
+            "tool_calls": result.tool_calls,
+            "knowledge_hits": knowledge_hits,
+            "handled_by": f"{service.capitalize()} Agent",
+        }
 
     # service == "unknown" or anything else → General MOEI worker handles it
     # (in-scope = answers from catalog; out-of-scope = polite refusal + redirect to MOEI topics)
     result_g = await run_general_agent(text=text, language=language, memory_snippets=memory)
     draft = result_g.draft_ar if language == "ar" else result_g.draft_en
-    return {"worker_draft": draft, "tool_calls": result_g.tool_calls, "knowledge_hits": knowledge_hits,
-            "handled_by": "General Service Agent"}
+    return {
+        "worker_draft": draft,
+        "tool_calls": result_g.tool_calls,
+        "knowledge_hits": knowledge_hits,
+        "handled_by": "General Service Agent",
+    }
 
 
 async def critic_node(state: SupervisorState) -> dict:
@@ -536,6 +725,7 @@ def _dataset_escalation_signals(user_id: str, state: SupervisorState) -> tuple[l
         try:
             import sys
             from pathlib import Path
+
             _api = Path(__file__).resolve().parents[3] / "apps" / "api"
             if str(_api) not in sys.path:
                 sys.path.insert(0, str(_api))
@@ -577,6 +767,45 @@ def _dataset_escalation_signals(user_id: str, state: SupervisorState) -> tuple[l
     return fired, detail
 
 
+def assign_priority_tier(state: SupervisorState) -> str:
+    """Assign the 3-tier SLA priority for a case at open time (Feature A).
+
+    - urgent (SLA 1 day)  — live anger, very-negative sentiment, or a Critical-priority case.
+    - medium (SLA 3 days) — the case has been reopened, or an SLA was breached before.
+    - normal (SLA 5 days) — everything else.
+
+    Reads both raw state and the escalation_signals the escalation node already computed
+    (anger_flag / very_negative_sentiment / critical_priority / sla_breached / reopened), so it
+    stays correct even though the live SupervisorState models sentiment as a 0..1 float and
+    anger as emotion == 'angry' rather than as discrete flags.
+    """
+    signals = set(state.get("escalation_signals") or [])
+
+    # urgent
+    anger = (
+        bool(state.get("anger_flag")) or state.get("emotion") == "angry" or "anger_flag" in signals
+    )
+    sentiment = state.get("sentiment")
+    very_negative = (
+        (isinstance(sentiment, str) and "very negative" in sentiment.lower())
+        or (isinstance(sentiment, (int, float)) and sentiment <= 0.2)
+        or "very_negative_sentiment" in signals
+    )
+    critical = (
+        str(state.get("priority", "")).lower() == "critical" or "critical_priority" in signals
+    )
+    if anger or very_negative or critical:
+        return "urgent"
+
+    # medium
+    reopened = (state.get("reopen_count") or 0) > 0 or "reopened" in signals
+    sla_breached = bool(state.get("sla_breached")) or "sla_breached" in signals
+    if reopened or sla_breached:
+        return "medium"
+
+    return "normal"
+
+
 def escalation_node(state: SupervisorState) -> dict:
     """Decide human handoff in two layers.
 
@@ -591,24 +820,37 @@ def escalation_node(state: SupervisorState) -> dict:
     Below the threshold we still record which signals fired so the co-pilot can show them.
     """
     if state.get("intent") == "escalate_to_human":
-        return {"escalated": True, "escalation_reason": "explicit citizen request",
-                "escalation_signals": ["explicit_request"]}
+        return {
+            "escalated": True,
+            "escalation_reason": "explicit citizen request",
+            "escalation_signals": ["explicit_request"],
+        }
     if state.get("urgency") == "high":
         emo = state.get("emotion", "neutral")
-        return {"escalated": True,
-                "escalation_reason": f"high urgency ({emo}) — priority human handoff",
-                "escalation_signals": ["high_urgency"]}
+        return {
+            "escalated": True,
+            "escalation_reason": f"high urgency ({emo}) — priority human handoff",
+            "escalation_signals": ["high_urgency"],
+        }
     if state.get("critic_score", 1.0) < 0.65:
-        return {"escalated": True,
-                "escalation_reason": f"critic flagged ({state.get('critic_notes', '')})",
-                "escalation_signals": ["critic_flagged"]}
+        return {
+            "escalated": True,
+            "escalation_reason": f"critic flagged ({state.get('critic_notes', '')})",
+            "escalation_signals": ["critic_flagged"],
+        }
     housing = state.get("housing_decision") or {}
     if housing.get("recommendation") == "manual_review":
-        return {"escalated": True, "escalation_reason": "rules engine: manual review",
-                "escalation_signals": ["manual_review"]}
+        return {
+            "escalated": True,
+            "escalation_reason": "rules engine: manual review",
+            "escalation_signals": ["manual_review"],
+        }
     if state.get("confidence", 1.0) < 0.4:
-        return {"escalated": True, "escalation_reason": "low router confidence",
-                "escalation_signals": ["low_confidence"]}
+        return {
+            "escalated": True,
+            "escalation_reason": "low router confidence",
+            "escalation_signals": ["low_confidence"],
+        }
 
     fired, _detail = _dataset_escalation_signals(state.get("user_id", ""), state)
     if len(fired) >= 2:
@@ -684,18 +926,21 @@ async def composer_node(state: SupervisorState) -> dict:
                 "I want to be careful with my wording. Let me restate: "
                 f"{state.get('worker_draft', '')[:300]}"
             )
-            safe_ar = (
-                "أحرص على دقة الصياغة. أعيد الصياغة: "
-                f"{state.get('worker_draft', '')[:300]}"
-            )
+            safe_ar = f"أحرص على دقة الصياغة. أعيد الصياغة: {state.get('worker_draft', '')[:300]}"
             return {
                 "reply": (safe_ar if language == "ar" else safe_en) + footer,
                 "suggested_replies": [],
                 "citations": citations,
             }
-        return {"reply": reply + footer, "suggested_replies": result.suggested_replies, "citations": citations}
+        return {
+            "reply": reply + footer,
+            "suggested_replies": result.suggested_replies,
+            "citations": citations,
+        }
     except Exception as e:
-        logger.warning(f"Composer LLM failed ({type(e).__name__}: {e}); using worker draft verbatim")
+        logger.warning(
+            f"Composer LLM failed ({type(e).__name__}: {e}); using worker draft verbatim"
+        )
         hits = state.get("knowledge_hits", []) or []
         citations = _citations_from_hits(hits)
         footer = _format_citations_footer(citations, language, channel)
@@ -739,21 +984,41 @@ async def fast_compose_node(state: SupervisorState) -> dict:
 
     suggestions_en = {
         "housing": ["Show the 24-month plan", "I want to upload a salary slip", "Speak to a human"],
-        "energy":  ["Report another issue", "Check tariff slabs", "Speak to a human"],
-        "maritime":["List required documents", "What is the fee?", "Speak to a human"],
-        "transport":["List required documents", "Check renewal status", "Speak to a human"],
-        "infrastructure":["List required documents", "What is the SLA?", "Speak to a human"],
+        "energy": ["Report another issue", "Check tariff slabs", "Speak to a human"],
+        "maritime": ["List required documents", "What is the fee?", "Speak to a human"],
+        "transport": ["List required documents", "Check renewal status", "Speak to a human"],
+        "infrastructure": ["List required documents", "What is the SLA?", "Speak to a human"],
     }
     suggestions_ar = {
         "housing": ["اعرض خطة ٢٤ شهرًا", "أريد رفع كشف الراتب", "أحتاج موظف بشري"],
-        "energy":  ["الإبلاغ عن مشكلة أخرى", "تحقق من شرائح التعرفة", "أحتاج موظف بشري"],
-        "maritime":["الوثائق المطلوبة", "ما هي الرسوم؟", "أحتاج موظف بشري"],
-        "transport":["الوثائق المطلوبة", "تحقق من حالة التجديد", "أحتاج موظف بشري"],
-        "infrastructure":["الوثائق المطلوبة", "ما هي مدة المعالجة؟", "أحتاج موظف بشري"],
+        "energy": ["الإبلاغ عن مشكلة أخرى", "تحقق من شرائح التعرفة", "أحتاج موظف بشري"],
+        "maritime": ["الوثائق المطلوبة", "ما هي الرسوم؟", "أحتاج موظف بشري"],
+        "transport": ["الوثائق المطلوبة", "تحقق من حالة التجديد", "أحتاج موظف بشري"],
+        "infrastructure": ["الوثائق المطلوبة", "ما هي مدة المعالجة؟", "أحتاج موظف بشري"],
     }
     suggestions = (suggestions_ar if language == "ar" else suggestions_en).get(service, [])
 
-    return {"reply": cleaned, "suggested_replies": suggestions[:3], "citations": citations}
+    # Self-service detection (Feature B): the citizen got a direct, source-grounded
+    # FAQ/knowledge answer to a simple inquiry — no complaint, no escalation. Such a turn
+    # can auto-close the case without any human touch. We only flag here; the actual
+    # status write happens in persist_turn_node, once the case row exists.
+    intent = state.get("intent", "")
+    self_served = (
+        bool(citations)  # answer is grounded in a real FAQ/KB source, not a generic reply
+        # Only informational turns auto-close. A service_request means the citizen wants
+        # something *done* — keep that case open until it's actually actioned, even if the
+        # reply happened to cite a page.
+        and intent in ("inquiry", "status_check")
+        and not state.get("escalated")
+        and not state.get("policy_blocked")
+    )
+
+    return {
+        "reply": cleaned,
+        "suggested_replies": suggestions[:3],
+        "citations": citations,
+        "self_served": self_served,
+    }
 
 
 _VOICE_SENTIMENT_CACHE: dict[str, float] = {}
@@ -763,15 +1028,51 @@ def _keyword_sentiment(text: str) -> float:
     """Cheap lexicon score. Fast baseline used for all channels + as voice fallback."""
     t = text.lower()
     neg_kw = (
-        "behind", "arrears", "late", "lost", "fired", "can't pay", "cannot pay", "stressed",
-        "worried", "angry", "frustrated", "unacceptable", "horrible", "disappointed", "delayed",
-        "broken", "complaint", "stuck", "ignored", "rude", "useless",
-        "متأخر", "تأخر", "غاضب", "محبط", "شكوى", "غير مقبول", "فظيع",
+        "behind",
+        "arrears",
+        "late",
+        "lost",
+        "fired",
+        "can't pay",
+        "cannot pay",
+        "stressed",
+        "worried",
+        "angry",
+        "frustrated",
+        "unacceptable",
+        "horrible",
+        "disappointed",
+        "delayed",
+        "broken",
+        "complaint",
+        "stuck",
+        "ignored",
+        "rude",
+        "useless",
+        "متأخر",
+        "تأخر",
+        "غاضب",
+        "محبط",
+        "شكوى",
+        "غير مقبول",
+        "فظيع",
     )
     pos_kw = (
-        "thank", "thanks", "appreciate", "great", "excellent", "amazing", "fantastic",
-        "helpful", "wonderful", "smooth", "easy", "perfect",
-        "شكرا", "ممتاز", "رائع",
+        "thank",
+        "thanks",
+        "appreciate",
+        "great",
+        "excellent",
+        "amazing",
+        "fantastic",
+        "helpful",
+        "wonderful",
+        "smooth",
+        "easy",
+        "perfect",
+        "شكرا",
+        "ممتاز",
+        "رائع",
     )
     neg = sum(1 for k in neg_kw if k in t)
     pos = sum(1 for k in pos_kw if k in t)
@@ -792,18 +1093,23 @@ async def _llm_sentiment(text: str) -> float | None:
         return _VOICE_SENTIMENT_CACHE[cache_key]
     try:
         llm = get_llm_with_fallback(LLMRole.ROUTER, temperature=0.0)
-        msg = await llm.ainvoke([
-            ("system",
-             "Rate the emotional sentiment of a UAE citizen's message on a 0..1 scale. "
-             "0.0 = furious/distressed. 0.5 = neutral. 1.0 = delighted. "
-             "Respond ONLY with the number, e.g. '0.32'."),
-            ("human", text[:400]),
-        ])
+        msg = await llm.ainvoke(
+            [
+                (
+                    "system",
+                    "Rate the emotional sentiment of a UAE citizen's message on a 0..1 scale. "
+                    "0.0 = furious/distressed. 0.5 = neutral. 1.0 = delighted. "
+                    "Respond ONLY with the number, e.g. '0.32'.",
+                ),
+                ("human", text[:400]),
+            ]
+        )
         raw = (getattr(msg, "content", str(msg)) or "").strip()
         if isinstance(raw, list):
             raw = " ".join(str(p) for p in raw)
         # Pull the first float from the response
         import re
+
         m = re.search(r"\d+(\.\d+)?", raw)
         if not m:
             return None
@@ -816,19 +1122,50 @@ async def _llm_sentiment(text: str) -> float | None:
 
 
 _URGENCY_KW = (
-    "urgent", "emergency", "immediately", "right now", "asap", "today", "can't wait",
-    "cannot wait", "elderly", "mother", "father", "child", "baby", "medical", "hospital",
-    "no power", "no water", "unsafe", "danger", "leak", "deadline", "evicted",
-    "عاجل", "طارئ", "فورا", "حالا", "اليوم", "خطر", "مستشفى", "والدتي", "والدي",
+    "urgent",
+    "emergency",
+    "immediately",
+    "right now",
+    "asap",
+    "today",
+    "can't wait",
+    "cannot wait",
+    "elderly",
+    "mother",
+    "father",
+    "child",
+    "baby",
+    "medical",
+    "hospital",
+    "no power",
+    "no water",
+    "unsafe",
+    "danger",
+    "leak",
+    "deadline",
+    "evicted",
+    "عاجل",
+    "طارئ",
+    "فورا",
+    "حالا",
+    "اليوم",
+    "خطر",
+    "مستشفى",
+    "والدتي",
+    "والدي",
 )
 
 
 def _emotion_label(text: str, sentiment: float) -> str:
     """Map sentiment + cues to an emotion (Emotion-Aware Government, challenge Idea #2)."""
     tl = text.lower()
-    if any(k in tl for k in ("furious", "angry", "unacceptable", "outrageous", "ridiculous")) or any(k in text for k in ("غاضب", "غير مقبول")):
+    if any(
+        k in tl for k in ("furious", "angry", "unacceptable", "outrageous", "ridiculous")
+    ) or any(k in text for k in ("غاضب", "غير مقبول")):
         return "angry"
-    if any(k in tl for k in ("worried", "anxious", "scared", "afraid", "stressed", "nervous")) or any(k in text for k in ("قلق", "خائف", "متوتر")):
+    if any(
+        k in tl for k in ("worried", "anxious", "scared", "afraid", "stressed", "nervous")
+    ) or any(k in text for k in ("قلق", "خائف", "متوتر")):
         return "anxious"
     if sentiment < 0.4:
         return "frustrated"
@@ -850,19 +1187,46 @@ def _urgency_level(text: str, sentiment: float) -> str:
 # Life Event Detection Engine (challenge Idea #3): infer significant life events and the
 # MOEI services they unlock, so the agent can proactively recommend them.
 _LIFE_EVENTS = {
-    "marriage": (("married", "marriage", "wedding", "getting married", "زواج", "تزوجت"),
-                 "Newly married — may qualify for Sheikh Zayed Housing Programme support"),
-    "new_home": (("new home", "building a house", "build a house", "new villa", "moved house",
-                  "بناء منزل", "منزل جديد", "بيت جديد"),
-                 "Building/owning a home — housing grants, connections, and permits apply"),
-    "new_baby": (("new baby", "newborn", "had a baby", "expecting", "مولود", "طفل جديد"),
-                 "Growing family — review housing eligibility and family services"),
-    "retirement": (("retired", "retirement", "pension", "تقاعد", "تقاعدت"),
-                   "Retirement — revisit housing instalments and support options"),
-    "new_business": (("started a business", "new company", "trade licence", "investor", "شركة جديدة", "رخصة تجارية"),
-                     "New business — maritime/transport/energy commercial services may apply"),
-    "job_loss": (("lost my job", "unemployed", "laid off", "fired", "فقدت وظيفتي", "عاطل"),
-                 "Income change — proactively offer SZHP hardship rescheduling"),
+    "marriage": (
+        ("married", "marriage", "wedding", "getting married", "زواج", "تزوجت"),
+        "Newly married — may qualify for Sheikh Zayed Housing Programme support",
+    ),
+    "new_home": (
+        (
+            "new home",
+            "building a house",
+            "build a house",
+            "new villa",
+            "moved house",
+            "بناء منزل",
+            "منزل جديد",
+            "بيت جديد",
+        ),
+        "Building/owning a home — housing grants, connections, and permits apply",
+    ),
+    "new_baby": (
+        ("new baby", "newborn", "had a baby", "expecting", "مولود", "طفل جديد"),
+        "Growing family — review housing eligibility and family services",
+    ),
+    "retirement": (
+        ("retired", "retirement", "pension", "تقاعد", "تقاعدت"),
+        "Retirement — revisit housing instalments and support options",
+    ),
+    "new_business": (
+        (
+            "started a business",
+            "new company",
+            "trade licence",
+            "investor",
+            "شركة جديدة",
+            "رخصة تجارية",
+        ),
+        "New business — maritime/transport/energy commercial services may apply",
+    ),
+    "job_loss": (
+        ("lost my job", "unemployed", "laid off", "fired", "فقدت وظيفتي", "عاطل"),
+        "Income change — proactively offer SZHP hardship rescheduling",
+    ),
 }
 
 
@@ -918,7 +1282,7 @@ def next_best_action_node(state: SupervisorState) -> dict:
     elif intent == "suggestion":
         nba = "Acknowledge suggestion, log to Innovation Box, send Tawasul reference number"
     elif service == "housing" and housing.get("recommendation") == "approve_with_conditions":
-        nba = f"Send {housing.get('proposed_plan_months','12')}-month plan e-signature link; flag for officer review of salary docs"
+        nba = f"Send {housing.get('proposed_plan_months', '12')}-month plan e-signature link; flag for officer review of salary docs"
     elif service == "housing" and housing.get("recommendation") == "manual_review":
         nba = "Open case for Customer Happiness officer; commit 3-working-day SLA"
     elif intent == "status_check":
@@ -934,9 +1298,13 @@ def next_best_action_node(state: SupervisorState) -> dict:
     risk: dict = {}
     try:
         from ..workers.escalation_model import predict_escalation
+
         risk = predict_escalation(
-            intent=intent, service=service, channel=state.get("channel", "web"),
-            sentiment=sentiment, msg_len=len(state.get("text", "")),
+            intent=intent,
+            service=service,
+            channel=state.get("channel", "web"),
+            sentiment=sentiment,
+            msg_len=len(state.get("text", "")),
         )
     except Exception as e:
         logger.debug(f"escalation risk skipped: {e}")
@@ -946,10 +1314,7 @@ def next_best_action_node(state: SupervisorState) -> dict:
     # Autonomous Resolution (challenge Idea #5): the agent fully resolves simple, low-risk,
     # informational turns end-to-end — no human, no follow-up needed. Status lookups and
     # appreciations are inherently safe to auto-close; other intents must also be low-risk.
-    autonomous = (
-        not escalated
-        and intent in ("status_check", "appreciation")
-    ) or (
+    autonomous = (not escalated and intent in ("status_check", "appreciation")) or (
         not escalated
         and intent == "service_request"
         and risk.get("band") == "low"
@@ -986,9 +1351,62 @@ async def persist_turn_node(state: SupervisorState) -> dict:
     correlation_id = state.get("correlation_id") or state.get("session_id") or uuid.uuid4().hex
 
     try:
-        from ..workers.crm import emit_activity, upsert_case, write_audit_trail
+        from ..workers.crm import (
+            auto_resolve_case,
+            confirm_resolution_for_user,
+            emit_activity,
+            is_resolution_confirmation,
+            upsert_case,
+            write_audit_trail,
+        )
 
         sentiment = state.get("sentiment")
+
+        # Citizen-confirmed resolution: an explicit closure ("the technician fixed it",
+        # "it's working now", "تم الإصلاح") closes the citizen's open case end-to-end — no
+        # human, no new ticket. Tightly gated (positive-closure phrase + negation guard +
+        # not escalated + an existing open case), so it can't misfire on thanks/complaints.
+        if not state.get("escalated") and is_resolution_confirmation(text):
+            closed = confirm_resolution_for_user(user_id)
+            if closed:
+                emit_activity(
+                    event_type="citizen_confirmed_resolution",
+                    summary=f"✅ {closed['case_number']} resolved — citizen confirmed the fix "
+                    f"({channel})",
+                    user_id=user_id,
+                    user_name=state.get("user_name"),
+                    channel=channel,
+                    payload={
+                        "case_number": closed["case_number"],
+                        "resolution_type": closed.get("resolution_type"),
+                    },
+                )
+                write_audit_trail(
+                    correlation_id=correlation_id,
+                    user_id=user_id,
+                    channel=channel,
+                    events=[
+                        (
+                            "Request",
+                            {
+                                "channel": channel,
+                                "language": state.get("language"),
+                                "message": text[:500],
+                                "case_number": closed["case_number"],
+                            },
+                        ),
+                        (
+                            "Resolution",
+                            {
+                                "case_number": closed["case_number"],
+                                "resolution_type": closed.get("resolution_type"),
+                                "trigger": "citizen_confirmed",
+                            },
+                        ),
+                        ("Reply", {"text": state.get("reply", "")[:800]}),
+                    ],
+                )
+                return {"case_number": closed["case_number"]}
         case = upsert_case(
             user_id=user_id,
             user_name=state.get("user_name") or None,
@@ -1000,68 +1418,151 @@ async def persist_turn_node(state: SupervisorState) -> dict:
             escalated=bool(state.get("escalated")),
             correlation_id=correlation_id,
             escalation_reason=state.get("escalation_reason"),
+            priority_tier=assign_priority_tier(state),
         )
 
         # Record the decision trail (one row per node) for the Audit Trail / right-to-explanation.
         citations = state.get("citations") or []
         audit_events: list[tuple[str, dict]] = [
-            ("Request", {"channel": channel, "language": state.get("language"),
-                         "message": text[:500], "case_number": case.get("case_number") if case else None}),
-            ("Router", {"service": state.get("service"), "intent": state.get("intent"),
-                        "confidence": state.get("confidence")}),
-            ("Sentiment", {"score": sentiment, "emotion": state.get("emotion"), "urgency": state.get("urgency")}),
-            ("Guardrails", {"pii_redacted": state.get("pii_redacted", False),
-                            "policy_blocked": state.get("policy_blocked", False),
-                            "block_reason": state.get("block_reason")}),
-            ("Knowledge", {"sources": [{"title": c.get("title"), "url": c.get("url")} for c in citations]}),
-            ("Worker", {"handled_by": state.get("handled_by", "General Service Agent"),
-                        "tool_calls": state.get("tool_calls", []),
-                        "housing_decision": state.get("housing_decision")}),
+            (
+                "Request",
+                {
+                    "channel": channel,
+                    "language": state.get("language"),
+                    "message": text[:500],
+                    "case_number": case.get("case_number") if case else None,
+                },
+            ),
+            (
+                "Router",
+                {
+                    "service": state.get("service"),
+                    "intent": state.get("intent"),
+                    "confidence": state.get("confidence"),
+                },
+            ),
+            (
+                "Sentiment",
+                {
+                    "score": sentiment,
+                    "emotion": state.get("emotion"),
+                    "urgency": state.get("urgency"),
+                },
+            ),
+            (
+                "Guardrails",
+                {
+                    "pii_redacted": state.get("pii_redacted", False),
+                    "policy_blocked": state.get("policy_blocked", False),
+                    "block_reason": state.get("block_reason"),
+                },
+            ),
+            (
+                "Knowledge",
+                {"sources": [{"title": c.get("title"), "url": c.get("url")} for c in citations]},
+            ),
+            (
+                "Worker",
+                {
+                    "handled_by": state.get("handled_by", "General Service Agent"),
+                    "tool_calls": state.get("tool_calls", []),
+                    "housing_decision": state.get("housing_decision"),
+                },
+            ),
         ]
         if state.get("critic_score") is not None:
-            audit_events.append(("Critic", {"score": state.get("critic_score"), "notes": state.get("critic_notes")}))
-        audit_events.append(("Escalation", {"escalated": bool(state.get("escalated")),
-                                            "reason": state.get("escalation_reason")}))
-        audit_events.append(("Reply", {"text": state.get("reply", "")[:800],
-                                       "next_best_action": state.get("next_best_action")}))
-        write_audit_trail(correlation_id=correlation_id, user_id=user_id, channel=channel, events=audit_events)
+            audit_events.append(
+                ("Critic", {"score": state.get("critic_score"), "notes": state.get("critic_notes")})
+            )
+        audit_events.append(
+            (
+                "Escalation",
+                {
+                    "escalated": bool(state.get("escalated")),
+                    "reason": state.get("escalation_reason"),
+                },
+            )
+        )
+        audit_events.append(
+            (
+                "Reply",
+                {
+                    "text": state.get("reply", "")[:800],
+                    "next_best_action": state.get("next_best_action"),
+                },
+            )
+        )
+        write_audit_trail(
+            correlation_id=correlation_id, user_id=user_id, channel=channel, events=audit_events
+        )
 
         if case:
             emit_activity(
                 event_type="case_created" if state.get("intent") != "status_check" else "turn",
-                summary=f"{case['case_number']} · {state.get('intent','?')} · {state.get('service','?')} · {channel}",
-                user_id=user_id, user_name=state.get("user_name"), channel=channel,
-                payload={"case_id": str(case["id"]), "case_number": case["case_number"],
-                          "service": state.get("service"), "intent": state.get("intent"),
-                          "priority": case.get("priority"), "sentiment": sentiment},
+                summary=f"{case['case_number']} · {state.get('intent', '?')} · {state.get('service', '?')} · {channel}",
+                user_id=user_id,
+                user_name=state.get("user_name"),
+                channel=channel,
+                payload={
+                    "case_id": str(case["id"]),
+                    "case_number": case["case_number"],
+                    "service": state.get("service"),
+                    "intent": state.get("intent"),
+                    "priority": case.get("priority"),
+                    "sentiment": sentiment,
+                },
             )
         if state.get("escalated"):
             emit_activity(
                 event_type="escalation",
-                summary=f"Escalated to co-pilot · {state.get('escalation_reason','')}",
-                user_id=user_id, user_name=state.get("user_name"), channel=channel,
+                summary=f"Escalated to co-pilot · {state.get('escalation_reason', '')}",
+                user_id=user_id,
+                user_name=state.get("user_name"),
+                channel=channel,
             )
 
         # Autonomous resolution: close pure-information turns end-to-end, no human needed.
         if case and state.get("autonomous") and state.get("intent") == "status_check":
             try:
                 from ..workers.crm import resolve_case_autonomously
+
                 resolve_case_autonomously(case["case_number"])
                 emit_activity(
                     event_type="autonomous_resolution",
                     summary=f"🤖 {case['case_number']} resolved autonomously · no human needed",
-                    user_id=user_id, user_name=state.get("user_name"), channel=channel,
+                    user_id=user_id,
+                    user_name=state.get("user_name"),
+                    channel=channel,
                     payload={"case_number": case["case_number"]},
                 )
             except Exception as e:
                 logger.debug(f"autonomous resolve skipped: {e}")
+
+        # Self-service auto-close (Feature B): a direct FAQ/knowledge answer to a simple
+        # inquiry resolves the case end-to-end. Never on an escalated turn — auto_resolve_case
+        # also guards against overriding an existing escalation/resolution.
+        if case and state.get("self_served") and not state.get("escalated"):
+            try:
+                auto_resolve_case(case["case_number"])
+                emit_activity(
+                    event_type="self_served_resolution",
+                    summary=f"✅ {case['case_number']} self-served · resolved without an agent",
+                    user_id=user_id,
+                    user_name=state.get("user_name"),
+                    channel=channel,
+                    payload={"case_number": case["case_number"], "resolution_type": "self_served"},
+                )
+            except Exception as e:
+                logger.debug(f"self-served resolve skipped: {e}")
 
         # Life-event signals → proactive recommendation logged for the co-pilot.
         for ev in state.get("life_events", []) or []:
             emit_activity(
                 event_type="life_event",
                 summary=f"🎯 Life-event detected · {ev}",
-                user_id=user_id, user_name=state.get("user_name"), channel=channel,
+                user_id=user_id,
+                user_name=state.get("user_name"),
+                channel=channel,
                 payload={"recommendation": ev},
             )
 

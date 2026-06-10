@@ -72,6 +72,10 @@ smoke:  ## End-to-end smoke: curl the API across channels + Arabic
 	@echo "--- Exec KPIs ---"
 	@curl -s http://localhost:8000/exec/kpis | python3 -m json.tool | head -20
 
+smoke-demo:  ## Scripted cross-channel Housing Maintenance demo (seed DEMO-001 first; needs api up)
+	@uv run python scripts/seed_demo_citizen.py
+	@BASE_URL=$${BASE_URL:-http://localhost:8000} bash scripts/smoke_demo.sh
+
 # ---- One-command bootstrap ----
 
 # Fails with a helpful message when .env is missing (Make runs this rule when the file doesn't exist)
@@ -91,7 +95,8 @@ db-migrate:  ## Apply all SQL migrations (safe to re-run — errors on existing 
 	@for f in infra/postgres/init.sql infra/postgres/init_v2.sql infra/postgres/init_v3.sql \
 	          infra/postgres/init_v4_knowledge.sql infra/postgres/init_v5_recordings.sql \
 	          infra/postgres/init_v6_citizens.sql infra/postgres/init_v7_geo.sql \
-	          infra/postgres/init_v8_dataset.sql infra/postgres/init_v9_whatsapp.sql; do \
+	          infra/postgres/init_v8_dataset.sql infra/postgres/init_v9_whatsapp.sql \
+	          infra/postgres/init_v10_sla.sql; do \
 	    PGPASSWORD=hassan_dev psql -h 127.0.0.1 -U hassan -d hassan -f "$$f" >/dev/null 2>&1 || true; \
 	done
 
@@ -133,4 +138,4 @@ sys.exit('ngrok not ready yet — try again in a few seconds') if not url else \
 print('\n  Webhook URL (paste in Meta App Dashboard → Webhooks):\n\n    ' + url + '/whatsapp/webhook\n')"
 
 .PHONY: help infra-up infra-down infra-nuke infra-logs sync api test lint fmt web web-install \
-        ollama-pull wa-profile smoke db-up db-migrate dataset up down webhook-url
+        ollama-pull wa-profile smoke smoke-demo db-up db-migrate dataset up down webhook-url

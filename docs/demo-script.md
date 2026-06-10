@@ -94,3 +94,48 @@ operations — with a full audit trail behind every decision."*
 ## One-line message for judges
 > *We didn't build a chatbot. We built MOEI's unified digital brain — it knows the citizen,
 > empowers the employee, and gives leadership real-time, explainable decision support.*
+
+---
+
+## Scripted CLI demo — `make smoke-demo` (Housing Maintenance journey)
+
+A **deterministic 5-minute** version of Act 1 that runs entirely from the terminal — perfect as a
+backup if the UI is flaky, or to show judges the cross-channel logic with nothing to hide. It walks
+**one citizen across five channels/touches** and **asserts** continuity at every step.
+
+> **Persona for this run:** **Ahmed Al Mansouri** — Customer ID **`DEMO-001`**, phone
+> `+971501234567`, preferred channel **WhatsApp**, **VIP Silver**. He arrives with history: a
+> *resolved* Housing Maintenance case from ~3 months ago and an *open* vehicle-registration renewal
+> from last week. (Different persona from the Fatima UI walkthrough above — this one is purpose-built
+> for the scripted run.)
+>
+> **Setup (once):** `make api` (API on :8000) in one terminal. Then in another:
+> ```bash
+> make smoke-demo        # seeds DEMO-001 (idempotent) then runs the 5 steps with assertions
+> ```
+> The target seeds the citizen for you. To re-run the script alone: `bash scripts/smoke_demo.sh`
+> (honours `BASE_URL`). Each step prints PASS/PASS-FAIL and a final scoreboard.
+
+**The journey:** `web → WhatsApp (AR) → proactive push → agent handoff → mobile closure`, keyed by
+the single Customer ID the whole way.
+
+| Presenter says | System shows |
+|---|---|
+| **Step 1 — Website intent.** *"Ahmed opens our website and reports a maintenance problem: 'I have a crack in the ceiling of my MOEI housing unit.' Watch — no menus, no forms."* | A `POST /chat/web` (channel `web`, EN). The supervisor classifies it as a **housing service request**, opens a case, and the response carries a real **`MOEI-CASE-…` number**. The script captures it as `$CASE_ID`. **Rubric:** Agentic Depth (25) — intent → action → case. **Wow:** a plain sentence became a tracked government case in one turn. |
+| **Step 2 — WhatsApp follow-up, in Arabic.** *"Now Ahmed switches to WhatsApp and asks in Arabic: 'ما هو آخر تحديث على طلبي؟' — what's the latest on my request? He never tells us who he is."* | A `POST /chat/web` (channel `whatsapp`, AR). The agent resolves him by **Customer ID**, pulls his open case, and replies **in Arabic citing the same `$CASE_ID`** with its status — the script asserts the reply contains that case number. **Rubric:** Agentic Depth (25) — cross-channel continuity. **Wow:** *"Notice the agent knew exactly who Ahmed was on WhatsApp, in Arabic, and referenced the case he opened on the web — without asking him to identify himself again. That's the unified profile in action."* |
+| **Step 3 — Proactive update.** *"We don't wait for Ahmed to chase us. The moment the case is assigned, MOEI reaches out to him first — on his preferred channel."* | A `POST /cases/$CASE_ID/trigger-update` pushes *"field visit scheduled for Thursday"* to his **preferred channel (WhatsApp)**, logs it as a **sent notification**, and drops it on the activity timeline (HTTP 200 asserted). **Rubric:** Federal Impact (25) — proactive engagement, fewer inbound contacts. **Wow:** the agency initiates the conversation, not the citizen. |
+| **Step 4 — Agent handoff card.** *"Say a human needs to step in. Here's the single screen they get."* | A `GET /crm/agent-context?case_id=$CASE_ID` returns one card: **customer_name, case_summary, sentiment, recommended_action**, and the **full cross-channel interaction_history** (the web + WhatsApp turns — asserted ≥ 2, across both channels). **Rubric:** Agentic Depth (25) + Technical Excellence (20) — context-preserving handoff. **Wow:** the agent inherits the entire history and a recommended next step — zero repetition for the citizen. |
+| **Step 5 — Mobile closure.** *"Finally Ahmed opens the mobile app: 'The technician came and fixed it, thank you.' Watch the case close itself."* | A `POST /chat/web` (channel `mobile`). The supervisor detects the **citizen-confirmed resolution**, closes the case end-to-end, and sets **`status=resolved`, `resolution_type=agent_resolved`** (asserted via `GET /crm/cases/$CASE_ID`). **Rubric:** Agentic Depth (25) + Federal Impact (25) — autonomous resolution, higher FCR. **Wow:** no agent, no form — a thank-you on a third channel closed the loop. |
+
+**Close on the scoreboard the script prints:**
+> ```
+> Cross-channel context preserved: YES
+> Case auto-resolved: YES
+> ```
+> *"One citizen, one Customer ID, four channels — web, WhatsApp, proactive push, mobile — and not
+> once did he repeat himself. That's not a chatbot; that's a unified digital brain for MOEI."*
+
+**If a step shows ✗ live:** the most likely cause is the LLM router classifying Step 1 as a
+non-housing service or Step 2 not as a status check. Re-run — the assertions are deterministic given
+a created case; only the upstream classification is model-driven. The seed and all five endpoints
+are deterministic.

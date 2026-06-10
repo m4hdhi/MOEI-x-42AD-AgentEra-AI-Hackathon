@@ -20,6 +20,7 @@ from .routes import (
     admin_auth,
     analytics,
     auth,
+    cases,
     chat,
     copilot,
     crm,
@@ -87,6 +88,7 @@ app.include_router(copilot.router)
 app.include_router(exec_dashboard.router)
 # v2 endpoints for omnichannel CRM + proactive engagement + analytics + live activity
 app.include_router(crm.router)
+app.include_router(cases.router)
 app.include_router(notifications.router)
 app.include_router(recordings.router)
 app.include_router(documents.router)

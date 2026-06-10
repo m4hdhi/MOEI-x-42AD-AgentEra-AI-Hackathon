@@ -523,6 +523,147 @@ def _greeting(profile: dict, last: dict | None, open_cases: list) -> str:
     return f"Welcome back, {name}. How can I help you today?"
 
 
+def _sentiment_label(score: float | None) -> str:
+    if score is None:
+        return "unknown"
+    if score < 0.34:
+        return "negative"
+    if score < 0.66:
+        return "neutral"
+    return "positive"
+
+
+def _recommended_action(case: dict, interaction_count: int) -> str:
+    """A concrete next step for the human agent picking this case up — derived from its state."""
+    status = (case.get("status") or "open").lower()
+    sentiment = case.get("sentiment")
+    if status == "escalated" or case.get("escalated"):
+        return ("Take ownership now — this case is escalated. Call the citizen and resolve "
+                "within SLA.")
+    if status in ("resolved", "closed"):
+        return "Close the loop: send a CSAT survey and confirm the citizen is satisfied."
+    if sentiment is not None and float(sentiment) < 0.4:
+        return ("Lead with empathy — sentiment is negative. Apologise, give a firm timeline, "
+                "and offer a proactive update.")
+    if interaction_count >= 2:
+        return ("Citizen has reached out on multiple channels — confirm the latest status and the "
+                "next milestone (e.g. field visit) so they don't have to ask again.")
+    return "Provide a status update and confirm the next concrete milestone for the citizen."
+
+
+@router.get("/agent-context")
+def agent_context(case_id: str = Query(..., description="Case number, e.g. MOEI-CASE-...")) -> dict:
+    """Agent-handoff context card: everything a human needs to take over a case in one glance.
+
+    When the AI hands a case to a person (or a person opens one), this is the screen they get:
+    who the citizen is, what the case is about, how they feel, the recommended next action, and
+    the full cross-channel interaction history — so the agent never makes the citizen repeat
+    themselves (challenge Q8/Q20).
+    """
+    with db_cursor() as cur:
+        cur.execute("SELECT * FROM cases WHERE case_number = %s", (case_id,))
+        case = cur.fetchone()
+        if not case:
+            raise HTTPException(404, f"case {case_id} not found")
+
+        user_id = case["user_id"]
+        customer_id = case.get("customer_id") or user_id
+
+        # Customer name: prefer the master profile, fall back to the name on the case.
+        cur.execute(
+            "SELECT full_name_en, full_name_ar, vip_tier, preferred_channel, mobile, emirate "
+            "FROM citizens WHERE user_id = %s OR customer_id = %s LIMIT 1",
+            (user_id, customer_id),
+        )
+        profile = cur.fetchone() or {}
+        customer_name = profile.get("full_name_en") or case.get("user_name") or user_id
+
+        # Cross-channel interaction history — live supervisor turns from the audit log
+        # (one entry per turn, any channel), so the web + WhatsApp turns both show up.
+        cur.execute(
+            """
+            SELECT correlation_id, channel, node, payload, created_at
+            FROM audit_log
+            WHERE user_id = %s AND node IN ('Request', 'Reply')
+            ORDER BY created_at ASC
+            """,
+            (user_id,),
+        )
+        rows = cur.fetchall()
+
+        # Also pull any pre-existing/seeded interaction rows for this customer.
+        cur.execute(
+            """
+            SELECT channel, occurred_at, intent, service_category, message_sample
+            FROM interactions WHERE customer_id = %s
+            ORDER BY occurred_at ASC NULLS LAST
+            """,
+            (customer_id,),
+        )
+        seeded = cur.fetchall()
+
+    # Fold the audit rows into one entry per turn (correlation_id), in time order.
+    turns: dict[str, dict] = {}
+    order: list[str] = []
+    for r in rows:
+        cid = r["correlation_id"]
+        if cid not in turns:
+            turns[cid] = {"channel": r["channel"], "at": r["created_at"],
+                          "message": None, "reply": None}
+            order.append(cid)
+        payload = r.get("payload") or {}
+        if r["node"] == "Request":
+            turns[cid]["message"] = payload.get("message")
+            turns[cid]["channel"] = r["channel"] or turns[cid]["channel"]
+            turns[cid]["at"] = r["created_at"]
+        elif r["node"] == "Reply":
+            turns[cid]["reply"] = payload.get("text")
+
+    interaction_history: list[dict] = []
+    for cid in order:
+        t = turns[cid]
+        interaction_history.append({
+            "source": "live",
+            "channel": t["channel"],
+            "at": t["at"].isoformat() if hasattr(t["at"], "isoformat") else t["at"],
+            "message": t["message"],
+            "agent_reply": t["reply"],
+        })
+    for s in seeded:
+        interaction_history.append({
+            "source": "history",
+            "channel": s.get("channel"),
+            "at": s["occurred_at"].isoformat() if s.get("occurred_at") else None,
+            "intent": s.get("intent"),
+            "service": s.get("service_category"),
+            "message": s.get("message_sample"),
+        })
+
+    sentiment = float(case["sentiment"]) if case.get("sentiment") is not None else None
+    case_summary = case.get("title") or f"{case.get('service', 'service')} request"
+    if case.get("description"):
+        case_summary = f"{case_summary} — {case['description']}"
+
+    return {
+        "case_id": case_id,
+        "case_number": case_id,
+        "customer_id": customer_id,
+        "customer_name": customer_name,
+        "customer_name_ar": profile.get("full_name_ar"),
+        "vip_tier": profile.get("vip_tier"),
+        "preferred_channel": profile.get("preferred_channel"),
+        "service": case.get("service"),
+        "status": case.get("status"),
+        "priority": case.get("priority"),
+        "case_summary": case_summary,
+        "sentiment": sentiment,
+        "sentiment_label": _sentiment_label(sentiment),
+        "recommended_action": _recommended_action(dict(case), len(interaction_history)),
+        "channels_seen": sorted({i["channel"] for i in interaction_history if i.get("channel")}),
+        "interaction_history": interaction_history,
+    }
+
+
 @router.get("/citizens/{user_id}/recommendations")
 def citizen_recommendations(user_id: str) -> dict:
     """Hyper-personalized service recommendations (challenge Idea #9).
