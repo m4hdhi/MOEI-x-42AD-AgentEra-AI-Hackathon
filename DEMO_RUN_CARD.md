@@ -1,4 +1,4 @@
-# DEMO RUN CARD — Hassan Hackathon
+# DEMO RUN CARD — Agent42 Hackathon
 ## Laptop operator: print this, tape it next to the screen.
 
 ---
@@ -44,7 +44,7 @@
 2. Open WhatsApp, find the MOEI test number
 3. Send:
    > *"What's the status of my request?"*
-4. Wait for the reply — Hassan responds with:
+4. Wait for the reply — Agent42 responds with:
    - Fatima's name (no re-introduction)
    - The real case status + SLA timing
    - Her preferred channel recognized

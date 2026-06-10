@@ -18,7 +18,14 @@ import { LoginGate } from "@/components/LoginGate";
 import type { UaePassSession } from "@/lib/auth";
 
 type Turn = { role: "agent" | "citizen"; text: string; t?: number };
-type CallState = "idle" | "ringing" | "connected" | "listening" | "thinking" | "speaking" | "saving";
+type CallState =
+  | "idle"
+  | "ringing"
+  | "connected"
+  | "listening"
+  | "thinking"
+  | "speaking"
+  | "saving";
 
 type SpeechRec = any;
 
@@ -53,7 +60,9 @@ function CallExperience({ session }: { session: UaePassSession }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<number | null>(null);
   const stateRef = useRef<CallState>("idle");
-  useEffect(() => { stateRef.current = state; }, [state]);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Recording: mic stream + MediaRecorder + chunk buffer.
   const mediaRecRef = useRef<MediaRecorder | null>(null);
@@ -62,22 +71,29 @@ function CallExperience({ session }: { session: UaePassSession }) {
   // Keep the latest transcript + call start in refs so the hang-up handler isn't stale.
   const transcriptRef = useRef<Turn[]>([]);
   const callStartRef = useRef<number>(0);
-  useEffect(() => { transcriptRef.current = transcript; }, [transcript]);
+  useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
 
-  const elapsed = () => (callStartRef.current ? Math.floor((Date.now() - callStartRef.current) / 1000) : 0);
+  const elapsed = () =>
+    callStartRef.current
+      ? Math.floor((Date.now() - callStartRef.current) / 1000)
+      : 0;
 
   // Probe ElevenLabs availability once
   useEffect(() => {
     fetch(`${API_URL}/voice/tts/status`)
-      .then(r => r.json())
-      .then(d => setUsingEleven(!!d.available))
+      .then((r) => r.json())
+      .then((d) => setUsingEleven(!!d.available))
       .catch(() => setUsingEleven(false));
   }, []);
 
   // Init browser STT once
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SR =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
     if (!SR) {
       setError("Voice not supported in this browser. Try Chrome or Edge.");
       return;
@@ -107,11 +123,17 @@ function CallExperience({ session }: { session: UaePassSession }) {
     r.onend = () => {
       if (stateRef.current === "listening") {
         // Restart STT loop if we're still expecting the citizen to talk
-        try { r.start(); } catch {}
+        try {
+          r.start();
+        } catch {}
       }
     };
     recogRef.current = r;
-    return () => { try { r.stop(); } catch {} };
+    return () => {
+      try {
+        r.stop();
+      } catch {}
+    };
   }, []);
 
   async function startCall() {
@@ -130,10 +152,17 @@ function CallExperience({ session }: { session: UaePassSession }) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
-                 : MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "";
-      const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-      rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
+      const mime = MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/mp4")
+          ? "audio/mp4"
+          : "";
+      const rec = mime
+        ? new MediaRecorder(stream, { mimeType: mime })
+        : new MediaRecorder(stream);
+      rec.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
       rec.start(1000); // gather a chunk every second
       mediaRecRef.current = rec;
     } catch (e) {
@@ -144,23 +173,36 @@ function CallExperience({ session }: { session: UaePassSession }) {
     callStartRef.current = Date.now();
     setTimeout(() => {
       setState("connected");
-      const opener = "Hello, you've reached the Ministry of Energy and Infrastructure. How can I help you today?";
+      const opener =
+        "Hello, you've reached the Ministry of Energy and Infrastructure. How can I help you today?";
       speak(opener, "en");
       setTranscript([{ role: "agent", text: opener, t: 0 }]);
-      timerRef.current = window.setInterval(() => setDuration(d => d + 1), 1000) as unknown as number;
+      timerRef.current = window.setInterval(
+        () => setDuration((d) => d + 1),
+        1000,
+      ) as unknown as number;
     }, 1200);
   }
 
   function endCall() {
     setInterim("");
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    try { recogRef.current?.stop(); } catch {}
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    try {
+      recogRef.current?.stop();
+    } catch {}
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
     if (typeof window !== "undefined") window.speechSynthesis?.cancel();
 
     const turns = transcriptRef.current;
     const callDuration = elapsed();
-    const hadConversation = turns.filter((t) => t.role === "citizen").length > 0;
+    const hadConversation =
+      turns.filter((t) => t.role === "citizen").length > 0;
 
     // Stop the recorder, then upload audio + transcript once the final chunk lands.
     const rec = mediaRecRef.current;
@@ -179,17 +221,29 @@ function CallExperience({ session }: { session: UaePassSession }) {
       setState("saving");
       rec.onstop = () => {
         const type = rec.mimeType || "audio/webm";
-        const blob = chunksRef.current.length ? new Blob(chunksRef.current, { type }) : null;
+        const blob = chunksRef.current.length
+          ? new Blob(chunksRef.current, { type })
+          : null;
         finishUpload(blob);
       };
-      try { rec.stop(); } catch { finishUpload(null); }
+      try {
+        rec.stop();
+      } catch {
+        finishUpload(null);
+      }
     } else {
-      if (hadConversation) { setState("saving"); }
+      if (hadConversation) {
+        setState("saving");
+      }
       finishUpload(null);
     }
   }
 
-  async function uploadRecording(blob: Blob | null, turns: Turn[], callDuration: number) {
+  async function uploadRecording(
+    blob: Blob | null,
+    turns: Turn[],
+    callDuration: number,
+  ) {
     try {
       const fd = new FormData();
       fd.append("call_id", sessionId);
@@ -199,10 +253,14 @@ function CallExperience({ session }: { session: UaePassSession }) {
       fd.append("duration_seconds", String(callDuration));
       fd.append("transcript", JSON.stringify(turns));
       if (blob && blob.size > 0) {
-        const ext = (blob.type.includes("mp4")) ? "mp4" : "webm";
+        const ext = blob.type.includes("mp4") ? "mp4" : "webm";
         fd.append("audio", blob, `call.${ext}`);
       }
-      await fetch(`${API_URL}/recordings`, { method: "POST", body: fd, credentials: "include" });
+      await fetch(`${API_URL}/recordings`, {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
       setSaved(true);
     } catch (e) {
       console.warn("recording upload failed", e);
@@ -215,13 +273,18 @@ function CallExperience({ session }: { session: UaePassSession }) {
     const r = recogRef.current;
     if (!r) return;
     setState("listening");
-    try { r.lang = "en-US"; r.start(); } catch {}
+    try {
+      r.lang = "en-US";
+      r.start();
+    } catch {}
   }
 
   async function handleCitizenSpeech(text: string) {
     setTranscript((t) => [...t, { role: "citizen", text, t: elapsed() }]);
     setState("thinking");
-    try { recogRef.current?.stop(); } catch {}
+    try {
+      recogRef.current?.stop();
+    } catch {}
 
     try {
       const res = await fetch(`${API_URL}/voice/turn`, {
@@ -237,14 +300,18 @@ function CallExperience({ session }: { session: UaePassSession }) {
         }),
       });
       const data = await res.json();
-      const reply: string = data.text || "I didn't catch that, could you say it again?";
+      const reply: string =
+        data.text || "I didn't catch that, could you say it again?";
       const lang: string = data.language || "en";
       if (typeof data.sentiment === "number") setTone(data.sentiment);
       if (data.case_number) setCaseNumber(data.case_number);
       if (Array.isArray(data.citations) && data.citations.length) {
         setSources(data.citations.map((c: any) => c.title).filter(Boolean));
       }
-      setTranscript((t) => [...t, { role: "agent", text: reply, t: elapsed() }]);
+      setTranscript((t) => [
+        ...t,
+        { role: "agent", text: reply, t: elapsed() },
+      ]);
       await speak(reply, lang);
     } catch (e: any) {
       setError("Connection lost. Please try again.");
@@ -274,8 +341,10 @@ function CallExperience({ session }: { session: UaePassSession }) {
           });
           URL.revokeObjectURL(url);
           if (stateRef.current !== "idle") setState("connected");
-          // After Hassan finishes, immediately listen for the citizen
-          setTimeout(() => { if (stateRef.current === "connected") startListening(); }, 150);
+          // After Agent42 finishes, immediately listen for the citizen
+          setTimeout(() => {
+            if (stateRef.current === "connected") startListening();
+          }, 150);
           return;
         }
         // 503 → fall through to browser TTS
@@ -283,7 +352,10 @@ function CallExperience({ session }: { session: UaePassSession }) {
       }
       // Browser TTS fallback (free, no API)
       await new Promise<void>((resolve) => {
-        if (typeof window === "undefined" || !window.speechSynthesis) { resolve(); return; }
+        if (typeof window === "undefined" || !window.speechSynthesis) {
+          resolve();
+          return;
+        }
         const u = new SpeechSynthesisUtterance(text);
         u.lang = language === "ar" ? "ar-AE" : "en-US";
         u.rate = 1.05;
@@ -293,14 +365,18 @@ function CallExperience({ session }: { session: UaePassSession }) {
         window.speechSynthesis.speak(u);
       });
       if (stateRef.current !== "idle") setState("connected");
-      setTimeout(() => { if (stateRef.current === "connected") startListening(); }, 150);
+      setTimeout(() => {
+        if (stateRef.current === "connected") startListening();
+      }, 150);
     } catch {
       if (stateRef.current !== "idle") setState("connected");
     }
   }
 
   const fmtDuration = (s: number) => {
-    const m = Math.floor(s / 60).toString().padStart(2, "0");
+    const m = Math.floor(s / 60)
+      .toString()
+      .padStart(2, "0");
     const r = (s % 60).toString().padStart(2, "0");
     return `${m}:${r}`;
   };
@@ -314,31 +390,49 @@ function CallExperience({ session }: { session: UaePassSession }) {
             <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-moei-bronze to-moei-bronze-dark shadow-lg">
               <Phone className="text-white" size={28} />
             </div>
-            <h2 className="mt-4 text-xl font-bold text-white">MOEI Call Centre</h2>
-            <p className="text-[11px] uppercase tracking-wider text-slate-400">Customer Happiness Centre · 800 6634</p>
+            <h2 className="mt-4 text-xl font-bold text-white">
+              MOEI Call Centre
+            </h2>
+            <p className="text-[11px] uppercase tracking-wider text-slate-400">
+              Customer Happiness Centre · 800 6634
+            </p>
 
             {/* Status */}
             <div className="mt-4 flex items-center justify-center gap-2 text-xs">
               {state === "idle" && (
-                <span className="rounded-full bg-slate-700 px-3 py-1 text-slate-300">Not connected</span>
+                <span className="rounded-full bg-slate-700 px-3 py-1 text-slate-300">
+                  Not connected
+                </span>
               )}
               {state === "ringing" && (
-                <span className="animate-pulse rounded-full bg-amber-500/20 px-3 py-1 text-amber-300">Connecting…</span>
+                <span className="animate-pulse rounded-full bg-amber-500/20 px-3 py-1 text-amber-300">
+                  Connecting…
+                </span>
               )}
               {state === "connected" && (
-                <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-emerald-300">● Connected · {fmtDuration(duration)}</span>
+                <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-emerald-300">
+                  ● Connected · {fmtDuration(duration)}
+                </span>
               )}
               {state === "listening" && (
-                <span className="animate-pulse rounded-full bg-red-500/20 px-3 py-1 text-red-300">● Listening · {fmtDuration(duration)}</span>
+                <span className="animate-pulse rounded-full bg-red-500/20 px-3 py-1 text-red-300">
+                  ● Listening · {fmtDuration(duration)}
+                </span>
               )}
               {state === "thinking" && (
-                <span className="rounded-full bg-blue-500/20 px-3 py-1 text-blue-300">… One moment</span>
+                <span className="rounded-full bg-blue-500/20 px-3 py-1 text-blue-300">
+                  … One moment
+                </span>
               )}
               {state === "speaking" && (
-                <span className="animate-pulse rounded-full bg-moei-bronze/20 px-3 py-1 text-moei-bronze">🔊 Speaking</span>
+                <span className="animate-pulse rounded-full bg-moei-bronze/20 px-3 py-1 text-moei-bronze">
+                  🔊 Speaking
+                </span>
               )}
               {state === "saving" && (
-                <span className="animate-pulse rounded-full bg-blue-500/20 px-3 py-1 text-blue-300">Saving call record…</span>
+                <span className="animate-pulse rounded-full bg-blue-500/20 px-3 py-1 text-blue-300">
+                  Saving call record…
+                </span>
               )}
             </div>
 
@@ -351,33 +445,70 @@ function CallExperience({ session }: { session: UaePassSession }) {
             )}
 
             {/* Live voice tone (real-time sentiment) */}
-            {state !== "idle" && state !== "saving" && tone !== null && (() => {
-              const t = tone;
-              const meta = t < 0.35
-                ? { label: "Frustrated", emoji: "😠", cls: "bg-red-500/20 text-red-300" }
-                : t < 0.5
-                ? { label: "Stressed", emoji: "😟", cls: "bg-amber-500/20 text-amber-300" }
-                : t < 0.7
-                ? { label: "Neutral", emoji: "😐", cls: "bg-slate-600/40 text-slate-300" }
-                : { label: "Satisfied", emoji: "🙂", cls: "bg-emerald-500/20 text-emerald-300" };
-              return (
-                <div className="mt-3 flex items-center justify-center gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-slate-500">Live tone</span>
-                  <span className={"inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold " + meta.cls}>
-                    {meta.emoji} {meta.label}
-                  </span>
-                  <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-700">
-                    <div
-                      className={"h-full transition-all " + (t < 0.35 ? "bg-red-400" : t < 0.5 ? "bg-amber-400" : t < 0.7 ? "bg-slate-400" : "bg-emerald-400")}
-                      style={{ width: `${Math.round(t * 100)}%` }}
-                    />
+            {state !== "idle" &&
+              state !== "saving" &&
+              tone !== null &&
+              (() => {
+                const t = tone;
+                const meta =
+                  t < 0.35
+                    ? {
+                        label: "Frustrated",
+                        emoji: "😠",
+                        cls: "bg-red-500/20 text-red-300",
+                      }
+                    : t < 0.5
+                      ? {
+                          label: "Stressed",
+                          emoji: "😟",
+                          cls: "bg-amber-500/20 text-amber-300",
+                        }
+                      : t < 0.7
+                        ? {
+                            label: "Neutral",
+                            emoji: "😐",
+                            cls: "bg-slate-600/40 text-slate-300",
+                          }
+                        : {
+                            label: "Satisfied",
+                            emoji: "🙂",
+                            cls: "bg-emerald-500/20 text-emerald-300",
+                          };
+                return (
+                  <div className="mt-3 flex items-center justify-center gap-2">
+                    <span className="text-[10px] uppercase tracking-wider text-slate-500">
+                      Live tone
+                    </span>
+                    <span
+                      className={
+                        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold " +
+                        meta.cls
+                      }
+                    >
+                      {meta.emoji} {meta.label}
+                    </span>
+                    <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-700">
+                      <div
+                        className={
+                          "h-full transition-all " +
+                          (t < 0.35
+                            ? "bg-red-400"
+                            : t < 0.5
+                              ? "bg-amber-400"
+                              : t < 0.7
+                                ? "bg-slate-400"
+                                : "bg-emerald-400")
+                        }
+                        style={{ width: `${Math.round(t * 100)}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
             {saved && state === "idle" && (
               <div className="mt-2 text-[10px] text-emerald-400">
-                ✓ Call saved. A summary and any follow-up have been logged to your case file.
+                ✓ Call saved. A summary and any follow-up have been logged to
+                your case file.
               </div>
             )}
           </div>
@@ -386,13 +517,19 @@ function CallExperience({ session }: { session: UaePassSession }) {
           <div className="mt-6 flex h-20 items-center justify-center gap-1">
             {Array.from({ length: 24 }).map((_, i) => {
               const active = state === "listening" || state === "speaking";
-              const h = active ? 6 + ((Math.sin(i * 0.6 + duration * 2) + 1) * 16) : 4;
+              const h = active
+                ? 6 + (Math.sin(i * 0.6 + duration * 2) + 1) * 16
+                : 4;
               return (
                 <div
                   key={i}
                   className={
                     "w-1 rounded-full transition-all " +
-                    (state === "listening" ? "bg-red-400" : state === "speaking" ? "bg-moei-bronze" : "bg-slate-700")
+                    (state === "listening"
+                      ? "bg-red-400"
+                      : state === "speaking"
+                        ? "bg-moei-bronze"
+                        : "bg-slate-700")
                   }
                   style={{ height: `${h}px` }}
                 />
@@ -402,7 +539,9 @@ function CallExperience({ session }: { session: UaePassSession }) {
 
           {/* Interim transcript */}
           {interim && (
-            <div className="mt-2 text-center text-xs italic text-slate-400">“{interim}…”</div>
+            <div className="mt-2 text-center text-xs italic text-slate-400">
+              “{interim}…”
+            </div>
           )}
 
           {/* Transcript */}
@@ -415,7 +554,14 @@ function CallExperience({ session }: { session: UaePassSession }) {
               <ul className="space-y-2 text-[12px]">
                 {transcript.map((t, i) => (
                   <li key={i} className="flex gap-2">
-                    <span className={"shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase " + (t.role === "agent" ? "bg-moei-bronze text-white" : "bg-slate-700 text-slate-200")}>
+                    <span
+                      className={
+                        "shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase " +
+                        (t.role === "agent"
+                          ? "bg-moei-bronze text-white"
+                          : "bg-slate-700 text-slate-200")
+                      }
+                    >
                       {t.role === "agent" ? "MOEI" : "You"}
                     </span>
                     <span className="text-slate-200">{t.text}</span>
@@ -430,14 +576,22 @@ function CallExperience({ session }: { session: UaePassSession }) {
             <div className="mt-3 space-y-1.5">
               {caseNumber && (
                 <div className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-300">
-                  ✓ Logged as case <span className="font-mono font-semibold">{caseNumber}</span>
+                  ✓ Logged as case{" "}
+                  <span className="font-mono font-semibold">{caseNumber}</span>
                 </div>
               )}
               {sources.length > 0 && (
                 <div className="flex flex-wrap items-center justify-center gap-1 text-[10px] text-slate-400">
-                  <span className="uppercase tracking-wider text-slate-500">Sources:</span>
+                  <span className="uppercase tracking-wider text-slate-500">
+                    Sources:
+                  </span>
                   {sources.slice(0, 3).map((s) => (
-                    <span key={s} className="rounded-full bg-slate-700/60 px-2 py-0.5 text-slate-300">{s}</span>
+                    <span
+                      key={s}
+                      className="rounded-full bg-slate-700/60 px-2 py-0.5 text-slate-300"
+                    >
+                      {s}
+                    </span>
                   ))}
                 </div>
               )}
@@ -488,7 +642,8 @@ function CallExperience({ session }: { session: UaePassSession }) {
           </div>
         </div>
         <p className="mt-4 text-center text-[10px] text-slate-500">
-          Customer Happiness Centre · Arabic and English supported · Available 24/7
+          Customer Happiness Centre · Arabic and English supported · Available
+          24/7
         </p>
       </div>
     </div>

@@ -1,4 +1,4 @@
-"""Scrape the public MOEI services catalog into a JSON file Hassan can load.
+"""Scrape the public MOEI services catalog into a JSON file Agent42 can load.
 
 Runs Playwright against moei.gov.ae, waits for the SPA to render each category, then
 extracts service cards (title, summary, fee, SLA, audience, channels, docs where shown).
@@ -191,7 +191,7 @@ async def scrape() -> None:
             "title": "Sheikh Zayed Housing Programme — Reschedule a Housing Loan",
             "title_ar": "إعادة جدولة قرض الإسكان — برنامج الشيخ زايد للإسكان",
             "audience": "UAE nationals with an active SZHP loan",
-            "summary": "Citizens facing genuine financial hardship can apply to extend the term of their housing loan. Hassan triages eligibility via the rules engine and prepares the offer letter for e-signature.",
+            "summary": "Citizens facing genuine financial hardship can apply to extend the term of their housing loan. Agent42 triages eligibility via the rules engine and prepares the offer letter for e-signature.",
             "required_documents": ["Emirates ID", "Latest 3 months' salary slips", "Bank statement", "Active loan statement"],
             "channels": ["WhatsApp", "Voice (800 6634)", "Web", "Branch"],
             "sla_days": 3,
@@ -204,7 +204,7 @@ async def scrape() -> None:
         "_meta": {
             "source": "Scraped from moei.gov.ae public pages (Playwright). PDPL-safe. Re-run scripts/scrape_moei.py to refresh.",
             "version": "scraped-2026-05-24",
-            "agent_name": "Hassan",
+            "agent_name": "Agent42",
             "contact_centre": "800 6634",
             "tawasul_complaint": "171 (UAE Government complaints platform)",
             "uae_pass_required": True,

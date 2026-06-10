@@ -6,7 +6,7 @@ Adapted from the strategic playbook. **All build days complete. Day 18 = rest, t
 
 - ✅ Monorepo: `apps/api`, `apps/web`, `agents/`, `infra/`
 - ✅ docker-compose: Langfuse + Qdrant + Postgres + Redis
-- ✅ `.env.example`, brand identity (Hassan, UAE palette)
+- ✅ `.env.example`, brand identity (Agent42, UAE palette)
 - ✅ LangGraph supervisor hello-world
 
 ## ✅ Days 3–4 — Supervisor + Channel Gateway

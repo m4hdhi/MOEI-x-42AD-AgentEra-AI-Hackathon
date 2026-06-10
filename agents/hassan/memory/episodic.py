@@ -1,6 +1,6 @@
 """Mem0 episodic memory — user-scoped facts that persist across channels and sessions.
 
-This is what powers the demo-wow "Hassan greets Mariam by name on channel switch":
+This is what powers the demo-wow "Agent42 greets Mariam by name on channel switch":
 on the WhatsApp turn we add(text) → Mem0 extracts entities → on the voice turn search(user_id)
 returns "Mariam is 4 months behind on her SZHP loan; medical emergency".
 

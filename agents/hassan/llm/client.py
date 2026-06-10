@@ -104,7 +104,7 @@ def _jais_hf(*, temperature: float = 0.2) -> BaseChatModel:
 def _openai_chat(*, temperature: float = 0.3) -> BaseChatModel:
     """OpenAI GPT-4o-mini — fast, cheap, quality.
 
-    ~$0.15/M input tokens, ~$0.60/M output. ~$0.001 per Hassan turn.
+    ~$0.15/M input tokens, ~$0.60/M output. ~$0.001 per Agent42 turn.
     Used as the quality answering brain when OPENAI_API_KEY is set.
     """
     from langchain_openai import ChatOpenAI

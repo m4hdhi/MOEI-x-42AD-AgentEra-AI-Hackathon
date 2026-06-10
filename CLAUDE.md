@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-"Hassan" — a single agentic AI layer (the MOEI Smart Assistant) unifying customer engagement across
+"Agent42" — a single agentic AI layer (the MOEI Smart Assistant) unifying customer engagement across
 WhatsApp, voice, web, and mobile for the UAE Ministry of Energy and Infrastructure. One LangGraph
 supervisor serves every channel; citizens get a continuous cross-channel conversation, staff get an
 executive dashboard and agent co-pilot. Hackathon project (MOEI × 42 AgentEra, Challenge 3).

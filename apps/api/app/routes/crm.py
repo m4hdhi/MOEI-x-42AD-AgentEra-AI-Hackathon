@@ -108,7 +108,7 @@ def get_case(case_number: str) -> dict:
 def operational_kpis() -> dict:
     """Operational KPIs the brief asks for:
       - first_contact_resolution_pct : % of cases resolved without a channel switch and within SLA
-      - channel_deflection_pct       : % of cases handled fully by Hassan (status != 'escalated')
+      - channel_deflection_pct       : % of cases handled fully by Agent42 (status != 'escalated')
       - avg_handle_time_seconds      : avg (resolved_at - created_at) for resolved cases
       - cross_channel_continuity_pct : % of users with multi-channel touches in last 7d
     """

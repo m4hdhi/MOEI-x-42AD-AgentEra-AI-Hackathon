@@ -39,7 +39,7 @@ from .routes import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    logger.info(f"Hassan API starting — env={settings.app_env}, primary={settings.primary_llm}")
+    logger.info(f"Agent42 API starting — env={settings.app_env}, primary={settings.primary_llm}")
     # Start the proactive-notifications dispatcher
     from .core.dispatcher import start_dispatcher_background, stop_dispatcher_background
     start_dispatcher_background()
@@ -47,11 +47,11 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         stop_dispatcher_background()
-        logger.info("Hassan API shutting down")
+        logger.info("Agent42 API shutting down")
 
 
 app = FastAPI(
-    title="Hassan — Channel Gateway",
+    title="Agent42 — Channel Gateway",
     description="Single ingress for web / voice / WhatsApp / mobile. Normalizes payloads, "
     "extracts user_id + language, dispatches to the LangGraph supervisor.",
     version="0.1.0",

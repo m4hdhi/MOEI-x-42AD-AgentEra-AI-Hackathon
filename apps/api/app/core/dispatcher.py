@@ -25,27 +25,27 @@ BATCH = 25
 # Templated message bodies. Citizens see these as outbound WhatsApp/SMS.
 _TEMPLATES_EN = {
     "status_update": (
-        "MOEI Hassan: Update on your case {case_number} — current status is {status}. "
+        "MOEI Agent42: Update on your case {case_number} — current status is {status}. "
         "Reply STATUS for details or call 800 6634."
     ),
     "doc_reminder": (
-        "MOEI Hassan: We're waiting on documents for case {case_number}. "
+        "MOEI Agent42: We're waiting on documents for case {case_number}. "
         "Please upload your latest salary slip via WhatsApp or moei.gov.ae."
     ),
     "csat_survey": (
-        "MOEI Hassan: How was your recent service experience for case {case_number}? "
+        "MOEI Agent42: How was your recent service experience for case {case_number}? "
         "Rate us at https://han-ringleted-dubitatively.ngrok-free.dev/csat?case={case_number} "
         "or reply 1-5 here (5 = excellent). Your feedback helps us improve."
     ),
     "proactive_tip": (
-        "MOEI Hassan: Based on your housing rescheduling, you may also be eligible for "
+        "MOEI Agent42: Based on your housing rescheduling, you may also be eligible for "
         "the SZHP Hardship Programme. Reply INFO to learn more."
     ),
 }
 
 
 def _render(template: str, case_number: str | None, status: str | None) -> str:
-    body = _TEMPLATES_EN.get(template, "MOEI Hassan: We have an update for you. Call 800 6634.")
+    body = _TEMPLATES_EN.get(template, "MOEI Agent42: We have an update for you. Call 800 6634.")
     return body.format(case_number=case_number or "(no case)", status=status or "open")
 
 

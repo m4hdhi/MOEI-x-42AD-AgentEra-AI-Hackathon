@@ -17,7 +17,7 @@ router = APIRouter(prefix="/exec", tags=["exec"])
 # Demo baseline. The 90-day pilot will replace this with live Customer Happiness Centre
 # numbers shadow-mode against real traffic.
 _DEMO_KPIS = {
-    "agent_name": "Hassan",
+    "agent_name": "Agent42",
     "active_services": ["housing"],
     "shadow_services": ["energy", "infrastructure", "maritime", "transport"],
     "volumes_24h": {

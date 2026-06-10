@@ -1,4 +1,4 @@
-# Q&A CRUSHER — Hassan Hackathon
+# Q&A CRUSHER — Agent42 Hackathon
 ## Print this. One person holds it during Q&A and feeds answers to whoever is speaking.
 
 **Rule:** Every answer is 30 seconds max. Lead with the direct answer. Never say "good question."
@@ -12,7 +12,7 @@
 ### Q1 — "This is just a chatbot. How is it different from GPT?"
 
 **Answer:**
-"Three fundamental differences. First: Hassan has persistent cross-channel memory — GPT-4 doesn't know Fatima switched from WhatsApp to the web. Second: the housing decision runs on a deterministic Python rules engine, not an LLM guess — every result is citable to a specific SZHP rule. Third: the escalation engine fuses six CRM signals from the citizen's actual history — repeat escalator, reopened cases, SLA breach. GPT has no access to any of that. What you saw wasn't a chatbot. It was a multi-agent system with tools, memory, and real data."
+"Three fundamental differences. First: Agent42 has persistent cross-channel memory — GPT-4 doesn't know Fatima switched from WhatsApp to the web. Second: the housing decision runs on a deterministic Python rules engine, not an LLM guess — every result is citable to a specific SZHP rule. Third: the escalation engine fuses six CRM signals from the citizen's actual history — repeat escalator, reopened cases, SLA breach. GPT has no access to any of that. What you saw wasn't a chatbot. It was a multi-agent system with tools, memory, and real data."
 
 ---
 
@@ -54,7 +54,7 @@
 ### Q7 — "What's your go-to-market / how would MOEI actually deploy this?"
 
 **Answer:**
-"Ninety days. Phase 1: integrate UAE PASS, deploy on Core42 or Azure UAE North, connect Meta WhatsApp under MOEI's Business Account, get PDPL DPIA sign-off from the MOEI Data Protection Officer. Phase 2: thirty days in shadow mode — Hassan runs next to every human agent, never replies, we measure accuracy. Target is 80% agreement. Phase 3: live on housing arrears triage — 60% deflection target, measured against baseline. Named sponsors: MOEI Customer Happiness Centre, Sheikh Zayed Housing Programme, TDRA. We have the full pilot plan document."
+"Ninety days. Phase 1: integrate UAE PASS, deploy on Core42 or Azure UAE North, connect Meta WhatsApp under MOEI's Business Account, get PDPL DPIA sign-off from the MOEI Data Protection Officer. Phase 2: thirty days in shadow mode — Agent42 runs next to every human agent, never replies, we measure accuracy. Target is 80% agreement. Phase 3: live on housing arrears triage — 60% deflection target, measured against baseline. Named sponsors: MOEI Customer Happiness Centre, Sheikh Zayed Housing Programme, TDRA. We have the full pilot plan document."
 
 ---
 

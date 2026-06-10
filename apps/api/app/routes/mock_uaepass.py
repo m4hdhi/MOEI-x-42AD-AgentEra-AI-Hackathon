@@ -1,4 +1,4 @@
-"""Mock UAE PASS identity provider — runs locally inside Hassan's API.
+"""Mock UAE PASS identity provider — runs locally inside Agent42's API.
 
 Looks and behaves like the real qa-id.uaepass.ae:
   - Same OAuth 2.0 authorization-code grant

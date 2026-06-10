@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Hassan_Hackathon_Deck.pptx for MOEI × 42AD AgentEra elimination round."""
+"""Generate Agent42_Hackathon_Deck.pptx for MOEI × 42AD AgentEra elimination round."""
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -76,7 +76,7 @@ txt(s, "Hyper-Adaptive Smart Service Agent for the Nation",
 box(s, 3.5, 3.8, 6.33, 0.05, RED)
 txt(s, "MOEI  x  42 Abu Dhabi  |  AgentEra Hackathon  |  Challenge 3",
     0.5, 3.95, 12.3, 0.6, size=17, color=SLATE, align=PP_ALIGN.CENTER)
-txt(s, "Team Hassan",
+txt(s, "Team Agent42",
     0.5, 4.75, 12.3, 0.7, size=22, bold=True, color=GREEN, align=PP_ALIGN.CENTER)
 
 # Arabic subtitle
@@ -84,7 +84,7 @@ txt(s, "خدمة حكومة الإمارات بذكاء يستحقه الموا�
     0.5, 5.7, 12.3, 0.7, size=18, color=RGBColor(0x70, 0x90, 0xB0), align=PP_ALIGN.CENTER)
 
 notes(s, """PRESENTER A opens (30 seconds max):
-"Good morning. In the next five minutes, we're going to show you something that doesn't exist in any UAE government service today: a single AI agent that knows a citizen across every channel, never makes them repeat themselves, and acts before they even complain. This is Hassan."
+"Good morning. In the next five minutes, we're going to show you something that doesn't exist in any UAE government service today: a single AI agent that knows a citizen across every channel, never makes them repeat themselves, and acts before they even complain. This is Agent42."
 
 [Pause one second. Let the name land. Move to slide 2.]""")
 
@@ -120,7 +120,7 @@ txt(s, ">", 6.3, 3.5, 0.75, 0.8, size=44, bold=True, color=INK, align=PP_ALIGN.C
 box(s, 7.15, 1.05, 5.9, 6.1, RGBColor(0xE8, 0xF8, 0xED))
 txt(s, "WITH HASSAN", 7.35, 1.12, 5.5, 0.45, size=13, bold=True, color=GREEN)
 rows_hassan = [
-    "Sends one WhatsApp — Hassan already knows her",
+    "Sends one WhatsApp — Agent42 already knows her",
     "SZHP rules engine: rescheduling plan in 8 seconds",
     "Case created automatically. SLA clock starts.",
     "Proactive status update sent before she has to ask",
@@ -139,7 +139,7 @@ notes(s, """PRESENTER A (storytelling — slow and vivid):
 "Today: five days, four channels, one hour waiting, re-explaining herself every single time. No resolution."
 
 [Sweep right]
-"With Hassan: she sends one WhatsApp. Ninety seconds later the system knows who she is, runs the housing rules engine, proposes a rescheduling plan, creates a case, and sends her a proactive update before she even has to ask again."
+"With Agent42: she sends one WhatsApp. Ninety seconds later the system knows who she is, runs the housing rules engine, proposes a rescheduling plan, creates a case, and sends her a proactive update before she even has to ask again."
 
 "One conversation. Every channel. She never repeats herself once."
 
@@ -263,13 +263,13 @@ STEP 1 — Web Chat (localhost:3000/chat or ngrok URL)
 
 STEP 2 — WhatsApp
   - Send the same citizen's WhatsApp message: "What's the status of my request?"
-  NARRATE: "Different channel. Hassan already knows her — no re-introduction. It pulls her unified profile by Customer ID and returns the real case status with SLA timing."
+  NARRATE: "Different channel. Agent42 already knows her — no re-introduction. It pulls her unified profile by Customer ID and returns the real case status with SLA timing."
 
 STEP 3 — Admin > Citizens > Fatima > Send Status Update
   NARRATE: "Her case is SLA-breached. We send a proactive update before she has to chase. That is the difference."
 
 STEP 4 — Admin > Agent Co-pilot
-  NARRATE: "She's flagged as a Repeat Escalator. Two dataset signals fired — reopened case plus repeat history. Hassan routes her to a human automatically. The agent sees her entire cross-channel history on one screen. Acts in one click."
+  NARRATE: "She's flagged as a Repeat Escalator. Two dataset signals fired — reopened case plus repeat history. Agent42 routes her to a human automatically. The agent sees her entire cross-channel history on one screen. Acts in one click."
 
 PRESENTER C (quietly, while demo runs):
 "Note: voice and mobile run through the exact same supervisor. Same memory, same profile."
@@ -488,8 +488,8 @@ phases = [
         "PDPL DPIA signed by MOEI Data Protection Officer",
     ]),
     ("Days 31–60", "Shadow Mode Evaluation", RGBColor(0xC0, 0x70, 0x00), [
-        "Hassan reads every real citizen turn — never replies",
-        "Daily: Hassan recommendation vs. human decision",
+        "Agent42 reads every real citizen turn — never replies",
+        "Daily: Agent42 recommendation vs. human decision",
         "Target: >= 80% agreement on 5,000-turn evaluation set",
         "Cost target: < AED 1.00 per conversation confirmed",
     ]),
@@ -516,7 +516,7 @@ notes(s, """PRESENTER A (fast but specific):
 "Ninety days. Three phases. Three named partners who are already the right people at MOEI."
 
 Phase 1: "Real UAE PASS, real data residency on Core42, real WhatsApp under MOEI's account. PDPL DPIA signed."
-Phase 2: "Shadow mode — Hassan runs next to every real human agent. We measure accuracy. Target: 80% agreement."
+Phase 2: "Shadow mode — Agent42 runs next to every real human agent. We measure accuracy. Target: 80% agreement."
 Phase 3: "Sixty percent deflection on housing arrears. Two more services live. Citizen audit trail in production."
 
 "Named sponsors: MOEI Customer Happiness Centre owns the CSAT. Sheikh Zayed Housing Programme provides the caseload. TDRA provides UAE PASS access."
@@ -536,11 +536,11 @@ txt(s, "خدمة حكومة الإمارات بذكاء يستحقه الموا�
 
 box(s, 2.5, 3.9, 8.33, 0.06, RED)
 
-txt(s, "Hassan.", 0.5, 4.1, 12.3, 1.1, size=52, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+txt(s, "Agent42.", 0.5, 4.1, 12.3, 1.1, size=52, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
 txt(s, "UAE government service with the intelligence its citizens deserve.",
     0.5, 5.15, 12.3, 0.8, size=20, color=SLATE, align=PP_ALIGN.CENTER)
 
-txt(s, "Team Hassan  |  MOEI x 42 Abu Dhabi  |  AgentEra 2026",
+txt(s, "Team Agent42  |  MOEI x 42 Abu Dhabi  |  AgentEra 2026",
     0.5, 6.5, 12.3, 0.55, size=15, color=RGBColor(0x50, 0x70, 0x90), align=PP_ALIGN.CENTER)
 
 notes(s, """PRESENTER A (closes slow and clear — do not rush this):
@@ -553,13 +553,13 @@ notes(s, """PRESENTER A (closes slow and clear — do not rush this):
 
 [Look up from the screen. Look at the judges.]
 
-"Hassan."
+"Agent42."
 
 [Sit down. Let the silence hold for two seconds before Q&A starts. Do not fill it.]""")
 
 
 # ── Save ──────────────────────────────────────────────────────────────────────
-out = "/home/alsaeed/Dev/MOEI-x-42AD-AgentEra-AI-Hackathon/Hassan_Hackathon_Deck.pptx"
+out = "/home/alsaeed/Dev/MOEI-x-42AD-AgentEra-AI-Hackathon/Agent42_Hackathon_Deck.pptx"
 prs.save(out)
 print(f"Saved: {out}")
 print(f"Slides: {len(prs.slides)}")

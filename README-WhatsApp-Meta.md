@@ -149,7 +149,7 @@ Confirm it's healthy:
 
 ```bash
 curl http://localhost:8000/healthz
-# → {"status":"ok","agent":"Hassan"}
+# → {"status":"ok","agent":"Agent42"}
 ```
 
 ---
@@ -172,7 +172,7 @@ Verify the tunnel:
 
 ```bash
 curl https://your-domain.ngrok-free.app/healthz
-# → {"status":"ok","agent":"Hassan"}
+# → {"status":"ok","agent":"Agent42"}
 ```
 
 ---
@@ -236,7 +236,7 @@ Open [http://localhost:3000](http://localhost:3000):
 | Page | URL | Description |
 |---|---|---|
 | Home | `/` | Citizen portal landing + UAE PASS (mock) login |
-| Web Chat | `/chat` | Same Hassan LangGraph brain via browser |
+| Web Chat | `/chat` | Same Agent42 LangGraph brain via browser |
 | Voice | `/call` | LiveKit voice session (needs mic) |
 | Mobile | `/mobile` | Mobile-optimised citizen chat |
 | CSAT | `/csat` | Post-interaction satisfaction survey |
@@ -265,7 +265,7 @@ uv run --with pytest python -m pytest -q
 
 1. Send a WhatsApp message: *"My name is Ahmed and I have a housing complaint"*
 2. In another browser tab, open `/chat` and log in as the same citizen (matched by phone via `GET /crm/identify?phone=+971...`)
-3. The conversation history from WhatsApp is loaded automatically — Hassan greets Ahmed by name and picks up where WhatsApp left off
+3. The conversation history from WhatsApp is loaded automatically — Agent42 greets Ahmed by name and picks up where WhatsApp left off
 
 ---
 

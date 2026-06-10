@@ -1,7 +1,7 @@
 [project]
 name = "hassan"
 version = "0.1.0"
-description = "Hassan — Hyper-Adaptive Smart Service Agent for the Nation (MOEI × 42 AgentEra)"
+description = "Agent42 — Hyper-Adaptive Smart Service Agent for the Nation (MOEI × 42 AgentEra)"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }

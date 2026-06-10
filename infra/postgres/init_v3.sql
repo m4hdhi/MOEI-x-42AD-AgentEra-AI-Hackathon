@@ -1,4 +1,4 @@
--- Hassan v3: case feedback (CSAT + CES + free-text)
+-- Agent42 v3: case feedback (CSAT + CES + free-text)
 \connect hassan
 
 CREATE TABLE IF NOT EXISTS case_feedback (

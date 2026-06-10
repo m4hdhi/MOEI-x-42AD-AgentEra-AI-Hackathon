@@ -1,13 +1,13 @@
-# PDPL Compliance Mapping — Hassan
+# PDPL Compliance Mapping — Agent42
 
 > **UAE Federal Decree-Law No. 45 of 2021** on the Protection of Personal Data ("PDPL")
-> Article-by-article mapping of how Hassan satisfies each provision.
+> Article-by-article mapping of how Agent42 satisfies each provision.
 
-This document is the federal-impact deliverable. It demonstrates that Hassan is not just an
+This document is the federal-impact deliverable. It demonstrates that Agent42 is not just an
 AI demo but a system architected from day one for PDPL compliance — the difference between a
 hackathon toy and a production federal pilot.
 
-| PDPL Article | Provision (paraphrased) | Hassan's implementation |
+| PDPL Article | Provision (paraphrased) | Agent42's implementation |
 | --- | --- | --- |
 | Art. 4 — Consent | Personal data processing requires consent. | Consent screen shown before any data is collected; consent record persisted with timestamp, scope, and version (audit_log row, kind=`consent`). Right to withdraw exposed in the citizen UI. |
 | Art. 5 — Lawful processing | Limited to declared purposes. | Each tool call is logged with its purpose (e.g. `szhp_rules_engine: rescheduling assessment`). Data minimization built into the worker — only the parameters the rules engine needs are extracted from messages. |

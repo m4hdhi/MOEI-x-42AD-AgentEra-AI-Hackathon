@@ -137,7 +137,7 @@ async def _process_and_reply(
         try:
             await send(
                 sender,
-                "Sorry — Hassan is having a brief technical issue. "
+                "Sorry — Agent42 is having a brief technical issue. "
                 "Please try again in a moment, or call 800 6634.",
             )
         except Exception as inner:

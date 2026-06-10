@@ -1,4 +1,4 @@
-# Hassan — 12-slide deck outline
+# Agent42 — 12-slide deck outline
 
 > Build this as Keynote/Slides. **Do NOT pre-record slides** — judges can tell.
 > Use the UAE flag palette: red `#EF3340`, green `#009639`, white, ink `#0C1B2A`.
@@ -18,7 +18,7 @@
 
 ### 1 · Title
 
-- **Hassan**
+- **Agent42**
 - Hyper-Adaptive Smart Service Agent for the Nation
 - MOEI × 42 Abu Dhabi · AgentEra · Challenge 3
 - Team name + logos
@@ -29,7 +29,7 @@
 - Headline: *"4 months behind on her SZHP payments after a medical emergency — and a repeat
   escalator the system should have seen coming"*
 - Today's reality: **5 days, 4 channels, 1 hour wait, re-explaining every time**
-- Tomorrow with Hassan: **90 seconds, 1 conversation, every channel, never repeats**
+- Tomorrow with Agent42: **90 seconds, 1 conversation, every channel, never repeats**
 
 ### 3 · The federal problem
 
@@ -101,5 +101,5 @@
 ### 12 · Close
 
 - *"حسن. خدمة حكومة الإمارات بذكاء يستحقه المواطن."*
-- *"Hassan. UAE government service with the intelligence its citizens deserve."*
+- *"Agent42. UAE government service with the intelligence its citizens deserve."*
 - Single closing line. Land the plane.
