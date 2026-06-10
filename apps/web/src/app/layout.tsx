@@ -1,20 +1,25 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, Noto_Sans_Arabic } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { MoeiHeader } from "@/components/MoeiHeader";
 import { MoeiFooter } from "@/components/MoeiFooter";
 
-// MOEI uses a custom clean sans on moei.gov.ae; IBM Plex Sans is the closest free
-// match (geometric, slightly humanist, with a strong bold weight).
-const sans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// Fonts are self-hosted (vendored under ./fonts) instead of fetched from Google at build time,
+// so the app builds and runs fully offline — critical for the demo machine / fresh devices, and
+// it removes the ~6s-per-compile Google Fonts round-trip. Both are variable woff2 files (one file
+// covers every weight). MOEI uses a custom clean sans on moei.gov.ae; IBM Plex Sans is the closest
+// free match (geometric, slightly humanist, with a strong bold weight).
+const sans = localFont({
+  src: "./fonts/IBMPlexSans-Variable.woff2",
+  weight: "100 700",
   variable: "--font-sans",
+  display: "swap",
 });
-const arabic = Noto_Sans_Arabic({
-  subsets: ["arabic"],
-  weight: ["400", "500", "600", "700"],
+const arabic = localFont({
+  src: "./fonts/NotoSansArabic-Variable.woff2",
+  weight: "100 900",
   variable: "--font-arabic",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
