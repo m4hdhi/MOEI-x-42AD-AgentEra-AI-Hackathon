@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" role="img" aria-label="Clean energy and electric mobility in UAE">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#8cc8ec"/>
+      <stop offset=".62" stop-color="#d7edf3"/>
+      <stop offset="1" stop-color="#f7f5ea"/>
+    </linearGradient>
+    <linearGradient id="car" x1="0" x2="1">
+      <stop offset="0" stop-color="#eef3f2"/>
+      <stop offset="1" stop-color="#b6c2bf"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="680" fill="url(#sky)"/>
+  <rect x="0" y="462" width="1200" height="218" fill="#d7cdb4"/>
+  <path d="M0 520c196-40 320-24 484 12 220 48 412 30 716-18v166H0z" fill="#a7c48e" opacity=".55"/>
+  <g transform="translate(525 92)" fill="#dce4e8" stroke="#8aa1ad" stroke-width="5" opacity=".9">
+    <path d="M44 340V118l40-48 42 48v222z"/>
+    <path d="M150 340V36l48-36 46 36v304z"/>
+    <path d="M276 340V154l44-54 44 54v186z"/>
+    <path d="M410 340V104l52-54 50 54v236z"/>
+  </g>
+  <g transform="translate(756 162)" stroke="#f5f8f9" stroke-width="9" fill="none" opacity=".8">
+    <path d="M0 240h320M38 205h250M86 170h170"/>
+  </g>
+  <g transform="translate(44 94)">
+    <rect x="0" y="0" width="18" height="252" fill="#c8c6b9"/>
+    <path d="M18 18h270v84H18z" fill="#00732f"/>
+    <path d="M18 102h270v84H18z" fill="#fff"/>
+    <path d="M18 186h270v84H18z" fill="#111"/>
+    <path d="M18 18h78v252H18z" fill="#ef3340"/>
+  </g>
+  <g transform="translate(328 280)" stroke="#eaf3f0" stroke-width="12" fill="none">
+    <path d="M0 68c54-76 164-78 220 0"/>
+    <path d="M110 68V8M110 68l-70 48M110 68l70 48"/>
+  </g>
+  <g transform="translate(610 250)" stroke="#eaf3f0" stroke-width="12" fill="none">
+    <path d="M0 78c64-82 176-82 238 0"/>
+    <path d="M119 78V4M119 78l-78 54M119 78l78 54"/>
+  </g>
+  <g transform="translate(162 404)">
+    <path d="M120 116c34-70 78-102 168-102h216c68 0 130 42 168 102h76c30 0 56 24 56 54v54H42v-44c0-36 30-64 66-64z" fill="url(#car)" stroke="#75827e" stroke-width="7"/>
+    <path d="M266 36h156c58 0 104 28 132 72H192c18-43 42-72 74-72z" fill="#8fb9c7"/>
+    <path d="M462 114h92c24 0 48 12 70 32h-144z" fill="#d8e5e5"/>
+    <circle cx="202" cy="224" r="54" fill="#2c3436"/>
+    <circle cx="202" cy="224" r="25" fill="#cfd7d4"/>
+    <circle cx="648" cy="224" r="54" fill="#2c3436"/>
+    <circle cx="648" cy="224" r="25" fill="#cfd7d4"/>
+    <path d="M706 150h160" stroke="#2a6655" stroke-width="12" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(910 344)">
+    <rect x="0" y="0" width="132" height="246" rx="24" fill="#dfe6e2" stroke="#90a69a" stroke-width="7"/>
+    <rect x="38" y="54" width="56" height="70" rx="8" fill="#263c3f"/>
+    <path d="M68 68l-18 38h20l-12 38 34-54H70z" fill="#68d66f"/>
+    <path d="M0 154c-46 0-50 48-120 48" fill="none" stroke="#263c3f" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(92 365)">
+    <circle cx="94" cy="94" r="94" fill="#e8eadc"/>
+    <path d="M20 92c58-20 120-18 152 10" stroke="#63a162" stroke-width="26" fill="none" stroke-linecap="round"/>
+    <path d="M62 34c28 38 48 98 32 148" stroke="#8fc48b" stroke-width="22" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

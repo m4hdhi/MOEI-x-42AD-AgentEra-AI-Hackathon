@@ -125,6 +125,7 @@ export default function HomePage() {
 
   const NEWS = [
     {
+      image: "/news/smart-sustainable-building.svg",
       date: t("23 May 2026", "٢٣ مايو ٢٠٢٦"),
       tag: t("Customer Happiness", "سعادة المتعاملين"),
       title: t(
@@ -137,6 +138,7 @@ export default function HomePage() {
       ),
     },
     {
+      image: "/news/housing-handover.svg",
       date: t("13 May 2026", "١٣ مايو ٢٠٢٦"),
       tag: t("Sheikh Zayed Housing Programme", "برنامج الشيخ زايد للإسكان"),
       title: t(
@@ -149,6 +151,7 @@ export default function HomePage() {
       ),
     },
     {
+      image: "/news/ev-clean-energy.svg",
       date: t("11 May 2026", "١١ مايو ٢٠٢٦"),
       tag: t("Ministry News", "أخبار الوزارة"),
       title: t(
@@ -326,7 +329,12 @@ export default function HomePage() {
                 key={n.title}
                 className="overflow-hidden rounded-xl border border-moei-line bg-white shadow-moei-card transition-all hover:shadow-moei-card-hover"
               >
-                <div className="h-44 w-full bg-gradient-to-br from-moei-bronze/20 via-moei-cream to-moei-sand" />
+                <img
+                  src={n.image}
+                  alt=""
+                  className="h-44 w-full bg-moei-cream object-cover"
+                  loading="lazy"
+                />
                 <div className="p-5">
                   <div className="flex gap-3 text-[11px] uppercase tracking-wider">
                     <span className="text-moei-muted">{n.date}</span>
