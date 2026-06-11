@@ -9,7 +9,7 @@ Looks and behaves like the real qa-id.uaepass.ae:
 Several pre-configured citizens for demo sign-in. The first two are linked to seeded
 cross-channel profiles; the rest are clean UAE PASS demo personas for fresh journeys:
   - Ali Al Rumaithi           (Emirates ID 784-2002-1102000-2) — Gold tier, 3-channel history
-  - Fatima Al Mansouri        (Emirates ID 784-1990-1181000-4) — repeat escalator, open cases
+  - Mariam Al Mansouri        (Emirates ID 784-1990-1181000-4) — hardship housing loan, cross-channel
 
 The mock is intentionally faithful so the SAME backend OAuth client works against either
 the mock or the real UAE PASS. Switch by setting UAEPASS_MODE=staging in .env.
@@ -56,13 +56,13 @@ _USERS: dict[str, dict] = {
             "urn:uae:authentication:method:verified",
         ],
     },
-    "784199011810004": {       # Fatima Al Mansouri — dataset customer UAE-001181 (repeat escalator)
+    "784199011810004": {       # Mariam Al Mansouri — dataset customer UAE-001181 (hardship housing loan)
         "sub": "MOCKUUID-784199011810004",
         "userType": "SOP3",
-        "fullnameEN": "Fatima Al Mansouri",
-        "fullnameAR": "فاطمة المنصوري",
-        "firstnameEN": "Fatima",
-        "firstnameAR": "فاطمة",
+        "fullnameEN": "Mariam Al Mansouri",
+        "fullnameAR": "مريم المنصوري",
+        "firstnameEN": "Mariam",
+        "firstnameAR": "مريم",
         "lastnameEN": "Al Mansouri",
         "lastnameAR": "المنصوري",
         "gender": "Female",
@@ -71,7 +71,7 @@ _USERS: dict[str, dict] = {
         "nationalityEN": "UAE",
         "nationalityAR": "الإمارات",
         "mobile": "971530843221",
-        "email": "fatima.almansouri@example.ae",
+        "email": "mariam.almansouri@example.ae",
         "titleEN": "",
         "titleAR": "",
         "acr": "urn:safelayer:tws:policies:authentication:level:high",

@@ -394,7 +394,7 @@ def import_interactions(path: Path) -> int:
 # the mock UAE PASS issues (see apps/api/app/routes/mock_uaepass.py).
 DEMO_PERSONAS = {
     "UAE-001102": "784-2002-1102000-2",  # Ali Al Rumaithi (Gold, 3 channels)
-    "UAE-001181": "784-1990-1181000-4",  # Fatima Al Mansouri (repeat escalator)
+    "UAE-001181": "784-1990-1181000-4",  # Mariam Al Mansouri (hardship housing loan)
 }
 # Old developer test identities to purge (kept out of the demo).
 _OLD_TEST_IDS = ("784-2004-6541442-1", "784-1998-1234567-5")
@@ -463,7 +463,7 @@ def main():
     i = import_interactions(path)
     print(f"  ✓ Channel logs → interactions: {i}")
     finalize_demo()
-    print("  ✓ Rebased dates to now + linked demo personas (Ali, Fatima); purged old test IDs")
+    print("  ✓ Rebased dates to now + linked demo personas (Ali, Mariam); purged old test IDs")
     print("Done.")
 
 

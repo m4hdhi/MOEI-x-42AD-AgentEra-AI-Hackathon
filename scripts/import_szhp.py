@@ -100,14 +100,14 @@ def main():
                FROM pick WHERE s.id = pick.id""",
             (ALI,),
         )
-        # Fatima: tighter salary, heavier arrears → hardship → TRANSFER_ARREARS / refer.
+        # Mariam: tighter salary, heavier arrears → hardship → TRANSFER_ARREARS / refer.
         cur.execute(
             """WITH pick AS (
                  SELECT id FROM szhp_loans
                  WHERE current_salary BETWEEN 8000 AND 16000 AND over_due_amt > 60000
                    AND current_emi_amt > 0
                  ORDER BY over_due_amt DESC LIMIT 1)
-               UPDATE szhp_loans s SET user_id=%s, applicant='Fatima Al Mansouri', edb_customer_id='UAE-001181',
+               UPDATE szhp_loans s SET user_id=%s, applicant='Mariam Al Mansouri', edb_customer_id='UAE-001181',
                       family_size=6, dependents=4, has_active_request=FALSE
                FROM pick WHERE s.id = pick.id""",
             (FATIMA,),
