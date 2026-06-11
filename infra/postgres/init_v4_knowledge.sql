@@ -111,27 +111,27 @@ INSERT INTO knowledge_facts (topic, lang, keywords, title, answer, source_url) V
 
 ('szhp','en','sheikh zayed housing programme SZHP loan grant emirati citizen housing reschedule',
  'Sheikh Zayed Housing Programme',
- 'The Sheikh Zayed Housing Programme (SZHP) provides interest-free housing loans and grants to Emirati citizens. Hassan can triage your eligibility for loan rescheduling in under 90 seconds if you share your salary band and current commitment.',
+ 'The Sheikh Zayed Housing Programme (SZHP) provides interest-free housing loans and grants to Emirati citizens. Agent42 can triage your eligibility for loan rescheduling in under 90 seconds if you share your salary band and current commitment.',
  'https://www.moei.gov.ae/en/services/housing-services'),
 
 ('services_list','en','services list catalog all available what services provided',
  'MOEI services',
- 'MOEI offers federal services across four sectors: Housing (SZHP loans, rescheduling, hardship), Energy (electricity & water enquiries, tariffs, outages — federal coordination role), Transport (driver and vehicle federal coordination), and Maritime (vessel registration, seafarer certificates, ports). Hassan supports 18 of the most-requested services end-to-end on web, voice, WhatsApp, and mobile.',
+ 'MOEI offers federal services across four sectors: Housing (SZHP loans, rescheduling, hardship), Energy (electricity & water enquiries, tariffs, outages — federal coordination role), Transport (driver and vehicle federal coordination), and Maritime (vessel registration, seafarer certificates, ports). Agent42 supports 18 of the most-requested services end-to-end on web, voice, WhatsApp, and mobile.',
  'https://www.moei.gov.ae/en/services'),
 
 ('uae_pass','en','UAE PASS digital identity login authentication sign in',
- 'UAE PASS for Hassan',
- 'Hassan uses UAE PASS as the federated digital identity. Tap "Sign in with UAE PASS" on the citizen site to authenticate. In this hackathon demo, the mock UAE PASS flow uses the staging credentials Ministry of Identity publishes to developers; production would point to id.uaepass.ae.',
+ 'UAE PASS for Agent42',
+ 'Agent42 uses UAE PASS as the federated digital identity. Tap "Sign in with UAE PASS" on the citizen site to authenticate. In this hackathon demo, the mock UAE PASS flow uses the staging credentials Ministry of Identity publishes to developers; production would point to id.uaepass.ae.',
  'https://uaepass.ae'),
 
 ('languages','en','language arabic english bilingual khaliji emirati dialect',
  'Languages',
- 'Hassan replies in Arabic or English automatically based on the language you write in. The voice channel supports both English (US) and Arabic (UAE/Khaliji). All four channels — web, WhatsApp, voice, mobile — share the same supervisor and memory, so you can switch languages mid-conversation.',
+ 'Agent42 replies in Arabic or English automatically based on the language you write in. The voice channel supports both English (US) and Arabic (UAE/Khaliji). All four channels — web, WhatsApp, voice, mobile — share the same supervisor and memory, so you can switch languages mid-conversation.',
  'https://www.moei.gov.ae/en'),
 
 ('escalation','en','human agent escalate talk to person not satisfied complaint',
  'Reaching a human agent',
- 'If Hassan cannot resolve your request, you can ask to be escalated and a human MOEI agent will be assigned, with full visibility into your prior chat, voice, or WhatsApp transcript. Call 800 6634 to be routed directly to a human.',
+ 'If Agent42 cannot resolve your request, you can ask to be escalated and a human MOEI agent will be assigned, with full visibility into your prior chat, voice, or WhatsApp transcript. Call 800 6634 to be routed directly to a human.',
  'https://www.moei.gov.ae/en/contact-us'),
 
 ('complaints','en','complaint complain feedback unhappy issue problem case',
@@ -141,6 +141,6 @@ INSERT INTO knowledge_facts (topic, lang, keywords, title, answer, source_url) V
 
 ('news_disclaimer','en','news announcement update recent latest media center',
  'News & announcements',
- 'For the latest ministry announcements, refer to the official Media Centre. Hassan can summarise the headlines but always check the source page for full context and dates.',
+ 'For the latest ministry announcements, refer to the official Media Centre. Agent42 can summarise the headlines but always check the source page for full context and dates.',
  'https://www.moei.gov.ae/en/media-centre')
 ON CONFLICT DO NOTHING;

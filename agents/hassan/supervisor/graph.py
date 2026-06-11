@@ -9,6 +9,12 @@ Graph shape (whatsapp — fast path, ~half the latency):
 The WhatsApp shortcut skips the Critic and Composer LLM calls. Worker drafts are already
 grounded in the rules engine / MOEI catalog so they're factually correct; we just strip
 markdown and add channel-appropriate suggested replies.
+
+fast_compose also flags `self_served` when a simple inquiry was answered straight from a
+grounded FAQ/knowledge source with no escalation — persist_turn then auto-closes the case
+(status=resolved, resolution_type=self_served). Case priority_tier + sla_deadline are set at
+open time in persist_turn via assign_priority_tier() (3-tier SLA: urgent 1d / medium 3d /
+normal 5d).
 """
 
 from __future__ import annotations

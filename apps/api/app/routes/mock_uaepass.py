@@ -1,4 +1,4 @@
-"""Mock UAE PASS identity provider — runs locally inside Hassan's API.
+"""Mock UAE PASS identity provider — runs locally inside Agent42's API.
 
 Looks and behaves like the real qa-id.uaepass.ae:
   - Same OAuth 2.0 authorization-code grant
@@ -6,8 +6,8 @@ Looks and behaves like the real qa-id.uaepass.ae:
   - Same /token POST with Basic auth
   - Same /userinfo schema (sub, idn, fullnameEN, fullnameAR, userType, acr, mobile, email, …)
 
-Two pre-configured citizens (both real customers from the MOEI dataset, so signing in lands
-on a genuine cross-channel profile):
+Several pre-configured citizens for demo sign-in. The first two are linked to seeded
+cross-channel profiles; the rest are clean UAE PASS demo personas for fresh journeys:
   - Ali Al Rumaithi           (Emirates ID 784-2002-1102000-2) — Gold tier, 3-channel history
   - Fatima Al Mansouri        (Emirates ID 784-1990-1181000-4) — repeat escalator, open cases
 
@@ -72,6 +72,90 @@ _USERS: dict[str, dict] = {
         "nationalityAR": "الإمارات",
         "mobile": "971530843221",
         "email": "fatima.almansouri@example.ae",
+        "titleEN": "",
+        "titleAR": "",
+        "acr": "urn:safelayer:tws:policies:authentication:level:high",
+        "amr": ["urn:uae:authentication:method:verified"],
+    },
+    "784198803150018": {       # Mariam Al Shamsi — fresh housing journey
+        "sub": "MOCKUUID-784198803150018",
+        "userType": "SOP3",
+        "fullnameEN": "Mariam Al Shamsi",
+        "fullnameAR": "مريم الشامسي",
+        "firstnameEN": "Mariam",
+        "firstnameAR": "مريم",
+        "lastnameEN": "Al Shamsi",
+        "lastnameAR": "الشامسي",
+        "gender": "Female",
+        "idn": "784198803150018",
+        "idType": "ID",
+        "nationalityEN": "UAE",
+        "nationalityAR": "الإمارات",
+        "mobile": "971501234501",
+        "email": "mariam.alshamsi@example.ae",
+        "titleEN": "",
+        "titleAR": "",
+        "acr": "urn:safelayer:tws:policies:authentication:level:high",
+        "amr": ["urn:uae:authentication:method:verified"],
+    },
+    "784197912340022": {       # Saeed Al Neyadi — transport/maritime services
+        "sub": "MOCKUUID-784197912340022",
+        "userType": "SOP3",
+        "fullnameEN": "Saeed Al Neyadi",
+        "fullnameAR": "سعيد النيادي",
+        "firstnameEN": "Saeed",
+        "firstnameAR": "سعيد",
+        "lastnameEN": "Al Neyadi",
+        "lastnameAR": "النيادي",
+        "gender": "Male",
+        "idn": "784197912340022",
+        "idType": "ID",
+        "nationalityEN": "UAE",
+        "nationalityAR": "الإمارات",
+        "mobile": "971501234502",
+        "email": "saeed.alneyadi@example.ae",
+        "titleEN": "",
+        "titleAR": "",
+        "acr": "urn:safelayer:tws:policies:authentication:level:high",
+        "amr": ["urn:uae:authentication:method:verified"],
+    },
+    "784199506240037": {       # Aisha Al Kaabi — Arabic-first support flow
+        "sub": "MOCKUUID-784199506240037",
+        "userType": "SOP3",
+        "fullnameEN": "Aisha Al Kaabi",
+        "fullnameAR": "عائشة الكعبي",
+        "firstnameEN": "Aisha",
+        "firstnameAR": "عائشة",
+        "lastnameEN": "Al Kaabi",
+        "lastnameAR": "الكعبي",
+        "gender": "Female",
+        "idn": "784199506240037",
+        "idType": "ID",
+        "nationalityEN": "UAE",
+        "nationalityAR": "الإمارات",
+        "mobile": "971501234503",
+        "email": "aisha.alkaabi@example.ae",
+        "titleEN": "",
+        "titleAR": "",
+        "acr": "urn:safelayer:tws:policies:authentication:level:high",
+        "amr": ["urn:uae:authentication:method:verified"],
+    },
+    "784198411220041": {       # Omar Al Farsi — document upload/service status flow
+        "sub": "MOCKUUID-784198411220041",
+        "userType": "SOP3",
+        "fullnameEN": "Omar Al Farsi",
+        "fullnameAR": "عمر الفارسي",
+        "firstnameEN": "Omar",
+        "firstnameAR": "عمر",
+        "lastnameEN": "Al Farsi",
+        "lastnameAR": "الفارسي",
+        "gender": "Male",
+        "idn": "784198411220041",
+        "idType": "ID",
+        "nationalityEN": "UAE",
+        "nationalityAR": "الإمارات",
+        "mobile": "971501234504",
+        "email": "omar.alfarsi@example.ae",
         "titleEN": "",
         "titleAR": "",
         "acr": "urn:safelayer:tws:policies:authentication:level:high",

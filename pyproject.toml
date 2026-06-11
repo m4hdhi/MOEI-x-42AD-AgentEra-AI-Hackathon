@@ -1,77 +1,79 @@
 [project]
 name = "hassan"
 version = "0.1.0"
-description = "Hassan — Hyper-Adaptive Smart Service Agent for the Nation (MOEI × 42 AgentEra)"
+description = "Agent42 — Hyper-Adaptive Smart Service Agent for the Nation (MOEI × 42 AgentEra)"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 authors = [{ name = "AgentEra Team" }]
-dependencies = [
-    "joblib>=1.5.3",
-    "scikit-learn>=1.9.0",
-]
-
-[build-system]
-requires = ["setuptools>=77"]
-build-backend = "setuptools.build_meta"
-
 dependencies = [
   # API
   "fastapi>=0.115",
   "uvicorn[standard]>=0.32",
   "pydantic>=2.9",
   "pydantic-settings>=2.6",
-  "python-multipart>=0.0.12",
+  "python-multipart>=0.0.12",     # FastAPI Form/File parsing (documents, recordings, uaepass)
   "httpx>=0.27",
-  "orjson>=3.10",
   "loguru>=0.7",
 
-  # LangGraph supervisor + LangChain glue
+  # LangGraph supervisor + LangChain glue — only the sub-packages we import directly.
+  # (The `langchain` meta-package, langchain-community and langchain-ollama were never imported.)
   "langgraph>=0.2.50",
-  "langgraph-checkpoint-postgres>=2.0",
-  "langchain>=0.3",
   "langchain-core>=0.3",
-  "langchain-community>=0.3",
-  "langchain-openai>=0.2",        # used as Groq/OpenRouter OpenAI-compatible client
-  "langchain-google-genai>=2.0",
-  "langchain-ollama>=0.2",
+  "langchain-openai>=0.2",        # Groq/OpenAI-compatible client (also Jais via the HF router)
+  "langchain-google-genai>=2.0",  # Gemini — Arabic / long-context fallback
 
-  # Per-channel worker agents
-  "agno>=0.2",                    # formerly Phidata
-
-  # Memory + vector
-  "mem0ai>=0.1.50",
-  "qdrant-client>=1.12",
+  # Memory — short-term cross-channel buffer
   "redis>=5.2",
-
-  # RAG / docs
-  "docling>=2.7",                 # IBM, MIT, federal-clean
-  "unstructured>=0.16",
 
   # Observability
   "langfuse>=2.55",
 
-  # Guardrails / federal-grade
-  "presidio-analyzer>=2.2",
-  "presidio-anonymizer>=2.2",
-
   # Channels
   "twilio>=9.3",
+  "sse-starlette>=2.1",
+  "itsdangerous>=2.2",
+  "python-dotenv>=1.0",
 
-  # DB
-  "sqlalchemy[asyncio]>=2.0",
-  "psycopg[binary]>=3.2",
-  "asyncpg>=0.30",
+  # DB — raw psycopg + its connection pool. The code uses psycopg directly (no SQLAlchemy/asyncpg);
+  # the `pool` extra replaces the psycopg-pool that langgraph-checkpoint-postgres used to pull in.
+  "psycopg[binary,pool]>=3.2",
+
+  # ML — escalation classifier. scikit-learn is needed at runtime to unpickle the joblib model.
+  "joblib>=1.5.3",
+  "scikit-learn>=1.9.0",
 ]
 
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project.optional-dependencies]
+# Opt-in episodic memory. Mem0 powers cross-channel long-term recall; the code lazy-imports it
+# and no-ops without MEM0_API_KEY (the short-term Redis buffer still carries recent turns), so a
+# fresh `uv sync` stays lean. Install with: uv sync --extra integrations
+integrations = [
+  "mem0ai>=0.1.50",
+]
+# Bootstrap-only: pandas + openpyxl read the official MOEI hackathon workbook (.xlsx) in the
+# one-time demo-data import scripts (scripts/import_dataset.py, scripts/import_services_catalog.py).
+# Nothing in the running app (apps/, agents/) imports them, so the default `uv sync` / deploy stays
+# lean. `make up` installs this automatically via `uv run --extra dataset` for the data-load step.
+dataset = [
+  "pandas>=2.2",
+  "openpyxl>=3.1",
+]
+# Opt-in Anthropic Claude path (LLMRole REASONER/COMPOSER/CRITIC when HASSAN_USE_CLAUDE=1).
+# Off by default — the default cascade is OpenAI → Groq. Install with: uv sync --extra anthropic
+anthropic = [
+  "langchain-anthropic>=0.3",
+]
 voice = [
   "livekit-agents>=0.11",
   "livekit-plugins-deepgram>=0.6",
   "livekit-plugins-elevenlabs>=0.7",
   "livekit-plugins-openai>=0.8",
   "livekit-plugins-silero>=0.7",
-  "faster-whisper>=1.1",
 ]
 dev = [
   "ruff>=0.7",

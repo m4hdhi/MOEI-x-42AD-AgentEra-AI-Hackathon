@@ -74,6 +74,7 @@ class AssessBody(BaseModel):
     user_id: str | None = None
     declaration_accepted: bool = False     # mandatory authenticity declaration
     salary_cert_provided: bool = True       # a certificate was uploaded
+    salary_document_id: str | None = None   # customer_documents.id, verified server-side
     declared_salary: float | None = None    # salary stated on the certificate (fraud cross-check)
     income_stable: bool = True
     temporary_hardship: bool = False
@@ -88,6 +89,39 @@ def _next_reference(cur) -> str:
     return f"SZHP-RS-{year}-{n:05d}"
 
 
+def _salary_document(user_id: str, document_id: str | None) -> dict | None:
+    if not document_id:
+        return None
+    with db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, user_id, document_type, confidence, extracted_fields, signals, original_name
+            FROM customer_documents
+            WHERE id = %s AND user_id = %s
+            """,
+            (document_id, user_id),
+        )
+        return cur.fetchone()
+
+
+def _salary_from_document(doc: dict | None) -> float | None:
+    if not doc:
+        return None
+    fields = doc.get("extracted_fields") or {}
+    if isinstance(fields, str):
+        try:
+            fields = __import__("json").loads(fields)
+        except Exception:
+            fields = {}
+    value = fields.get("monthly_salary_aed") if isinstance(fields, dict) else None
+    if value in (None, ""):
+        return None
+    try:
+        return float(str(value).replace(",", "").replace("AED", "").strip())
+    except Exception:
+        return None
+
+
 @router.post("/assess")
 def assess(request: Request, body: AssessBody) -> dict:
     uid = get_authenticated_user_id(request) or body.user_id
@@ -99,6 +133,15 @@ def assess(request: Request, body: AssessBody) -> dict:
     loan = _loan_for(uid)
     if not loan:
         raise HTTPException(404, "No housing loan with arrears found for this beneficiary.")
+
+    salary_doc = _salary_document(uid, body.salary_document_id)
+    salary_doc_valid = bool(
+        salary_doc
+        and salary_doc.get("document_type") == "salary_certificate"
+        and float(salary_doc.get("confidence") or 0) >= 0.6
+    )
+    doc_salary = _salary_from_document(salary_doc)
+    declared_salary = body.declared_salary if body.declared_salary is not None else doc_salary
 
     case = ArrearsCase(
         application_id=loan.get("application_id") or "—",
@@ -116,8 +159,8 @@ def assess(request: Request, body: AssessBody) -> dict:
         income_stable=body.income_stable,
         temporary_hardship=body.temporary_hardship,
         obligations_ratio=body.obligations_ratio,
-        salary_cert_provided=body.salary_cert_provided,
-        declared_salary=body.declared_salary,
+        salary_cert_provided=salary_doc_valid,
+        declared_salary=declared_salary,
     )
     a = assess_rescheduling(case)
     structured = a.structured(case)
@@ -154,6 +197,9 @@ def assess(request: Request, body: AssessBody) -> dict:
             ("Retrieve", {"application_id": case.application_id, "salary": case.current_salary,
                           "arrears": case.arrears, "current_emi": case.current_emi}),
             ("Validate", {"documents_complete": a.application_complete,
+                          "salary_document_id": body.salary_document_id,
+                          "salary_document_type": salary_doc.get("document_type") if salary_doc else None,
+                          "salary_document_confidence": float(salary_doc.get("confidence") or 0) if salary_doc else None,
                           "active_request": case.has_active_request, "declaration": body.declaration_accepted}),
             ("Analyse", structured["income_analysis"]),
             ("Policy", {"rule_20": structured["rule_20_compliance"],

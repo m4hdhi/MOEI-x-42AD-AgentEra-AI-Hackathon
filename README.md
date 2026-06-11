@@ -1,10 +1,10 @@
-# MOEI Omnichannel AI Customer Engagement Agent
+# Agent42 MOEI Omnichannel AI Customer Engagement Agent
 
 > **MOEI × 42 Abu Dhabi · AgentEra AI Hackathon — Challenge 3**
 > A unified, intelligent customer-engagement layer for the UAE Ministry of Energy and Infrastructure,
 > operating consistently across **WhatsApp, the voice contact centre, the website, and the mobile app**.
 
-Citizens see one assistant — the **MOEI Smart Assistant** — that remembers them across every channel,
+Citizens see one assistant — **Agent42, the MOEI Smart Assistant** — that remembers them across every channel,
 answers in Arabic or English, creates and tracks cases, and hands off to a human when needed.
 Leadership gets one real-time dashboard; contact-centre agents get an AI co-pilot.
 
@@ -46,6 +46,12 @@ This project is a single agentic AI layer that unifies all four channels.
 **C · Agent & leadership enablement**
 - AI co-pilot for human agents (live transcript, sentiment, suggested next action).
 - Executive dashboard: real-time KPIs, sentiment trends, channel performance, escalation risk, forecasting.
+- **Strategic country intelligence — a digital advisor for leadership.** Pick a country and get a
+  decision-ready profile (economy, energy, infrastructure, UAE bilateral cooperation), then
+  *"prepare me for a meeting"* generates an executive briefing in seconds — talking points,
+  opportunities, risks, recommended actions, and smart questions — grounded only in trusted country
+  data (no invented facts). Plus side-by-side country comparison and grounded strategic Q&A, in
+  Arabic and English. Built for ministers preparing for international engagements.
 - Voice contact-centre analytics: every call recorded, transcribed, summarised, and quality-scored.
 - PDPL Article 7 audit trail — replay exactly how any decision was reached.
 
@@ -95,7 +101,7 @@ First-contact resolution · average handle time · customer effort score · CSAT
 | Database | **PostgreSQL 16** — cases, citizens, recordings, knowledge base (full-text search), audit log |
 | Cache / memory | **Redis 7** — short-term cross-channel conversation buffer |
 | Voice | Browser SpeechRecognition (STT) + **ElevenLabs** streaming TTS (browser TTS fallback) |
-| Messaging | **Twilio** WhatsApp (sandbox) |
+| Messaging | **Meta WhatsApp Cloud API** for production WhatsApp · **Twilio** for SMS / legacy sandbox fallback |
 | Identity | **UAE PASS** (wire-compatible mock for the demo; one env-var switch to staging) |
 | Observability | **Langfuse** (LLM traces — engineering only) |
 
@@ -126,7 +132,8 @@ docs/                     PDPL mapping, 90-day pilot, deck outline
 
 ## Running it locally
 
-**Prerequisites:** Docker, Node 20+, `pnpm`, and [`uv`](https://docs.astral.sh/uv/).
+**Prerequisites:** Node 20+, `pnpm`, [`uv`](https://docs.astral.sh/uv/), and either Docker for local
+Postgres/Redis/Langfuse or managed `DATABASE_URL` / `REDIS_URL` values for a web-host deployment.
 
 ```bash
 # 1. Infrastructure (Postgres + Redis + Langfuse)
@@ -136,14 +143,17 @@ make infra-up
 for f in infra/postgres/init.sql infra/postgres/init_v2.sql infra/postgres/init_v3.sql \
          infra/postgres/init_v4_knowledge.sql infra/postgres/init_v5_recordings.sql \
          infra/postgres/init_v6_citizens.sql infra/postgres/init_v7_geo.sql \
-         infra/postgres/init_v8_dataset.sql infra/postgres/init_v9_szhp.sql; do
+         infra/postgres/init_v8_dataset.sql infra/postgres/init_v9_szhp.sql \
+         infra/postgres/init_v9_whatsapp.sql infra/postgres/init_v10_sla.sql \
+         infra/postgres/init_v10_intel.sql; do
   docker exec -i hassan-postgres psql -U hassan -d hassan < "$f"
 done
 
 # 3. Secrets — copy the template and fill in your keys
 cp .env.example .env
 #   set OPENAI_API_KEY (or GROQ_API_KEY), ELEVENLABS_API_KEY,
-#   TWILIO_* , HASSAN_SESSION_SECRET, DATABASE_URL, REDIS_URL
+#   META_WHATSAPP_* for production WhatsApp, optional TWILIO_* fallback,
+#   HASSAN_SESSION_SECRET, DATABASE_URL, REDIS_URL, and CORS_EXTRA_ORIGINS
 
 # 4. Python deps + API on :8000
 make sync
@@ -160,12 +170,43 @@ uv run python scripts/import_dataset.py
 # 6a. Load the SZHP Loan Arrears Rescheduling dataset (2023–2025) + seed the officer queue
 uv run python scripts/import_szhp.py
 
+# 6b. Load country intelligence profiles (strategic partners — economy, energy, UAE bilateral)
+uv run python scripts/import_intel.py
+
 # 6b. (optional) extra synthetic content + knowledge crawl
 make synth                                       # synthetic cases + activity
 uv run python scripts/crawl_moei.py --max 250    # crawl moei.gov.ae into the knowledge base
 ```
 
 Open **http://localhost:3000**.
+
+### WhatsApp: Meta Cloud API
+
+Agent42 now uses **Meta WhatsApp Cloud API** as the primary chatbot channel. Configure the Meta app
+webhook callback as:
+
+```text
+https://<your-public-api-host>/whatsapp/webhook
+```
+
+`GET /whatsapp/webhook` handles Meta verification, and `POST /whatsapp/webhook` validates
+`X-Hub-Signature-256`, normalizes the sender to the same `whatsapp:+...` identity format used by
+Twilio, and replies through the Graph API. `/whatsapp/inbound` remains available for Twilio sandbox
+or SMS fallback. `/whatsapp/sandbox-info` prefers `META_WHATSAPP_NUMBER` when configured, so the
+homepage card links directly to the real WhatsApp number without a sandbox join code.
+
+### Web-host deployment
+
+Docker is optional local infrastructure, not a runtime requirement. For cloud deployment, provision
+managed Postgres and Redis, set `DATABASE_URL`, `REDIS_URL`, `CORS_EXTRA_ORIGINS`, and the Meta
+WhatsApp env vars, then run the API with:
+
+```bash
+uv run uvicorn app.main:app --app-dir apps/api --host 0.0.0.0 --port ${PORT:-8000}
+```
+
+The frontend deploys as a normal Next.js app from `apps/web`; set `NEXT_PUBLIC_API_URL` to the API
+origin. The repo also includes a `Procfile` for local/demo process managers.
 
 ### Surfaces
 
@@ -175,6 +216,7 @@ Open **http://localhost:3000**.
 | `/chat` | Citizen | Chat assistant *(UAE PASS sign-in required)* |
 | `/rescheduling` | Citizen | Housing loan arrears rescheduling — instant officer-grade decision |
 | `/admin/rescheduling` | Staff | Rescheduling officer console — queue, assessment, approve/override/refer |
+| `/admin/intelligence` | Leadership | Strategic country intelligence — profiles, "prepare me for a meeting" briefings, comparison, Q&A |
 | `/call` | Citizen | Voice contact centre — live tone, recording, case creation |
 | `/mobile` | Citizen | Mobile-app channel |
 | `/csat` | Citizen | Post-case satisfaction survey |
@@ -209,7 +251,7 @@ Open **http://localhost:3000**.
 - The **browser voice call** is a real recording → transcript → AI-analysis pipeline at $0.
   A physical line on **800 6634** would add Twilio Voice (telephony) — the intelligence layer behind it
   is already built.
-- WhatsApp uses the Twilio sandbox (visitors send the join code shown on the homepage card);
-  production needs a Meta-verified MOEI WhatsApp Business number — a configuration step, not a rebuild.
+- WhatsApp now uses Meta Cloud API for the production chatbot. Twilio remains wired for SMS and
+  legacy sandbox fallback.
 
 *Built for the MOEI × 42 Abu Dhabi AgentEra AI Hackathon.*

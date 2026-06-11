@@ -56,10 +56,12 @@ function MobileExperience({ session }: { session: UaePassSession }) {
   const [resumed, setResumed] = useState(false);
   const [sessionId] = useState(() => crypto.randomUUID());
   const userId = session.emirates_id || "anonymous";
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = chatScrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
   // Resume the conversation: pull the customer's recent turns from EVERY channel so the
@@ -153,7 +155,10 @@ function MobileExperience({ session }: { session: UaePassSession }) {
             </div>
 
             {/* Chat area */}
-            <div className="h-[460px] overflow-y-auto bg-moei-cream/20 px-3 py-4">
+            <div
+              ref={chatScrollRef}
+              className="h-[460px] overscroll-contain overflow-y-auto bg-moei-cream/20 px-3 py-4"
+            >
               {messages.length === 0 && (
                 <div className="px-2 pt-6 text-center">
                   <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-moei-bronze to-moei-bronze-dark shadow-md">
@@ -231,7 +236,6 @@ function MobileExperience({ session }: { session: UaePassSession }) {
                   );
                 })}
                 {busy && <div className="text-center text-[11px] text-moei-muted">One moment…</div>}
-                <div ref={bottomRef} />
               </div>
             </div>
 

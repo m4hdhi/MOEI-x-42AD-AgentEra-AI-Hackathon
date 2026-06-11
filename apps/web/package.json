@@ -16,8 +16,6 @@
     "lucide-react": "^0.460.0",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.5.4",
-    "class-variance-authority": "^0.7.0",
-    "framer-motion": "^11.11.0",
     "recharts": "^2.13.0"
   },
   "devDependencies": {

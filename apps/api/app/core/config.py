@@ -19,7 +19,6 @@ class Settings(BaseSettings):
     primary_llm: str = "groq:llama-3.3-70b-versatile"
     arabic_llm: str = "hf:inception/jais-family-30b-chat"
     longctx_llm: str = "google:gemini-2.5-flash"
-    fallback_llm: str = "ollama:qwen2.5:7b"
 
     groq_api_key: str | None = None
     google_api_key: str | None = None
@@ -27,14 +26,19 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://hassan:hassan_dev@localhost:5432/hassan"
     redis_url: str = "redis://localhost:6379/0"
-    qdrant_url: str = "http://localhost:6333"
-    qdrant_api_key: str | None = None
 
     langfuse_host: str = "http://localhost:3001"
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
 
-    ollama_host: str = "http://localhost:11434"
+    # Comma-separated extra CORS origins (e.g. your ngrok URL)
+    cors_extra_origins: str = ""
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        base = ["http://localhost:3000", "http://localhost:8000"]
+        extras = [o.strip() for o in self.cors_extra_origins.split(",") if o.strip()]
+        return base + extras
 
 
 @lru_cache

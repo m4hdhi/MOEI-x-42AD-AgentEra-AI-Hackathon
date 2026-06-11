@@ -1,4 +1,4 @@
--- Two databases: one for Hassan (LangGraph checkpoints + audit), one for Langfuse.
+-- Two databases: one for Agent42 (LangGraph checkpoints + audit), one for Langfuse.
 CREATE DATABASE langfuse;
 
 -- (pgvector is the production memory story but requires the pgvector/pgvector image.

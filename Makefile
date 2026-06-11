@@ -52,6 +52,10 @@ ollama-pull:  ## Pull local fallback models
 synth:  ## Generate synthetic SZHP cases + salary slips
 	uv run python scripts/gen_synthetic_data.py --cases 300 --slips 100
 
+# ---- WhatsApp setup ----
+wa-profile:  ## Request WhatsApp display name approval + set business profile (run once after .env is filled)
+	uv run python scripts/set_whatsapp_profile.py
+
 # ---- Smoke ----
 smoke:  ## End-to-end smoke: curl the API across channels + Arabic
 	@curl -s http://localhost:8000/healthz | python3 -m json.tool
@@ -68,4 +72,70 @@ smoke:  ## End-to-end smoke: curl the API across channels + Arabic
 	@echo "--- Exec KPIs ---"
 	@curl -s http://localhost:8000/exec/kpis | python3 -m json.tool | head -20
 
-.PHONY: help infra-up infra-down infra-nuke infra-logs sync api test lint fmt web web-install ollama-pull smoke
+smoke-demo:  ## Scripted cross-channel Housing Maintenance demo (seed DEMO-001 first; needs api up)
+	@uv run python scripts/seed_demo_citizen.py
+	@BASE_URL=$${BASE_URL:-http://localhost:8000} bash scripts/smoke_demo.sh
+
+# ---- One-command bootstrap ----
+
+# Fails with a helpful message when .env is missing (Make runs this rule when the file doesn't exist)
+.env:
+	@printf '\n  ERROR: .env not found.\n  Run:  cp .env.example .env\n  Then fill in at least GROQ_API_KEY, DATABASE_URL, REDIS_URL.\n\n'; exit 1
+
+db-up:  ## Start native Postgres + create hassan user/DB (WSL2-safe; idempotent)
+	@echo "==> PostgreSQL..."
+	@sudo service postgresql start 2>/dev/null || true
+	@sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='hassan'" 2>/dev/null | grep -q 1 \
+	    || sudo -u postgres psql -c "CREATE USER hassan WITH PASSWORD 'hassan_dev';"
+	@sudo -u postgres psql -lqt 2>/dev/null | cut -d'|' -f1 | grep -qw hassan \
+	    || sudo -u postgres createdb -O hassan hassan
+
+db-migrate:  ## Apply all SQL migrations (safe to re-run — errors on existing objects are suppressed)
+	@echo "==> DB migrations..."
+	@for f in infra/postgres/init.sql infra/postgres/init_v2.sql infra/postgres/init_v3.sql \
+	          infra/postgres/init_v4_knowledge.sql infra/postgres/init_v5_recordings.sql \
+	          infra/postgres/init_v6_citizens.sql infra/postgres/init_v7_geo.sql \
+	          infra/postgres/init_v8_dataset.sql infra/postgres/init_v9_whatsapp.sql \
+	          infra/postgres/init_v10_sla.sql; do \
+	    PGPASSWORD=hassan_dev psql -h 127.0.0.1 -U hassan -d hassan -f "$$f" >/dev/null 2>&1 || true; \
+	done
+
+dataset:  ## Import demo dataset (idempotent — wipes and reloads)
+	@echo "==> Demo data..."
+	@uv run --extra dataset python scripts/import_dataset.py
+	@$(MAKE) -s catalogue
+
+catalogue:  ## Load the official MOEI service catalogue into the knowledge base (idempotent)
+	@echo "==> Official service catalogue..."
+	@uv run --extra dataset python scripts/import_services_catalog.py
+
+up: .env  ## One command: bootstrap everything, then run API (:8000) + Web (:3000)
+	@$(MAKE) -s db-up
+	@echo "==> Docker infra (Redis + Langfuse)..."
+	@docker compose -f infra/docker-compose.yml up -d redis langfuse
+	@$(MAKE) -s db-migrate
+	@echo "==> Python deps..."
+	@uv sync -q && uv pip install -q -e agents
+	@echo "==> Web deps..."
+	@cd apps/web && pnpm install --silent
+	@[ -f apps/web/.env.local ] || echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > apps/web/.env.local
+	@$(MAKE) -s dataset
+	@printf '\n  API      → http://localhost:8000\n  Web      → http://localhost:3000\n  Langfuse → http://localhost:3001\n  ngrok    → starting ... run "make webhook-url" in a second terminal once it is up\n\n'
+	@uvx honcho start
+
+down:  ## Stop all services (Docker infra + native Postgres)
+	@echo "==> Stopping Docker infra..."
+	@docker compose -f infra/docker-compose.yml down
+	@echo "==> Stopping PostgreSQL..."
+	@sudo service postgresql stop 2>/dev/null || true
+
+webhook-url:  ## Print current ngrok tunnel URL to paste into Meta App Dashboard
+	@python3 -c "\
+import urllib.request, json, sys; \
+d = json.loads(urllib.request.urlopen('http://localhost:4040/api/tunnels').read()); \
+url = next((t['public_url'] for t in d['tunnels'] if t['proto']=='https'), None); \
+sys.exit('ngrok not ready yet — try again in a few seconds') if not url else \
+print('\n  Webhook URL (paste in Meta App Dashboard → Webhooks):\n\n    ' + url + '/whatsapp/webhook\n')"
+
+.PHONY: help infra-up infra-down infra-nuke infra-logs sync api test lint fmt web web-install \
+        ollama-pull wa-profile smoke smoke-demo db-up db-migrate dataset up down webhook-url

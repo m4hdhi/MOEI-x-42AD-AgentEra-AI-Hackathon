@@ -1,10 +1,24 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Sparkles, FileText, User, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Send,
+  Sparkles,
+  FileText,
+  User,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Home,
+  ArrowRight,
+} from "lucide-react";
 import { API_URL } from "@/lib/utils";
 import { LoginGate } from "@/components/LoginGate";
 import { DocumentUpload } from "@/components/DocumentUpload";
+import { looksLikeAutomationRequest, requestAutomationPlan } from "@/lib/automation";
 import type { UaePassSession } from "@/lib/auth";
 
 type Msg = {
@@ -23,12 +37,14 @@ type Msg = {
   correlationId?: string;
   channel?: string;
   streaming?: boolean;
+  automationAction?: { title: string; href?: string | null; label: string; confidence: number };
 };
 
 // Browser SpeechRecognition is vendor-prefixed
 type SpeechRec = any;
 
 const PROMPTS = [
+  "I want to request loan rescheduling for my Sheikh Zayed Housing loan",
   "I'm 4 months behind on my SZHP loan, my salary is 20000 AED, balance is 150000",
   "أحتاج تأجيل قسط السكن، راتبي 20000 درهم والرصيد 150000",
   "How do I report a power outage?",
@@ -49,6 +65,7 @@ export default function ChatPage() {
 }
 
 function ChatExperience({ session: uaepassSession }: { session: UaePassSession }) {
+  const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -56,6 +73,7 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
   const [listening, setListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [sessionId] = useState(() => crypto.randomUUID());
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const recogRef = useRef<SpeechRec | null>(null);
 
@@ -92,7 +110,9 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = chatScrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
   // Init browser speech recognition once
@@ -149,6 +169,58 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
     if (!text || busy) return;
     setInput("");
     setMessages((m) => [...m, { role: "user", text }]);
+
+    if (looksLikeAutomationRequest(text)) {
+      setBusy(true);
+      setMessages((m) => [...m, { role: "assistant", text: "Agent42 is planning the service action...", streaming: true }]);
+      try {
+        const plan = await requestAutomationPlan(text, viaVoice ? "voice" : "text");
+        const extra = plan.case_number
+          ? `\n\nCreated case: ${plan.case_number}`
+          : plan.route
+            ? "\n\nOpening the workflow now. You will still confirm declarations, uploads, and signatures yourself."
+            : "";
+        setMessages((m) => {
+          const next = [...m];
+          next[next.length - 1] = {
+            role: "assistant",
+            text: `${plan.reply}${extra}`,
+            lang: plan.language,
+            service: plan.service,
+            intent: plan.intent,
+            confidence: plan.confidence,
+            streaming: false,
+            automationAction: {
+              title: plan.title,
+              href: plan.route || (plan.required_fields.length ? `/automation?request=${encodeURIComponent(text)}` : plan.external_url) || (plan.case_number ? "/account" : null),
+              label: plan.route ? "Open workflow" : plan.required_fields.length ? "Continue details" : plan.case_number ? "View account" : "Open service",
+              confidence: plan.confidence,
+            },
+          };
+          return next;
+        });
+        if (voiceMode || viaVoice) {
+          speak(plan.reply, plan.language);
+        }
+        if (plan.route) {
+          window.setTimeout(() => router.push(plan.route!), 900);
+        }
+      } catch (e: any) {
+        setMessages((m) => {
+          const next = [...m];
+          next[next.length - 1] = {
+            role: "assistant",
+            text: e?.message || "Automation Agent could not plan that request.",
+            streaming: false,
+          };
+          return next;
+        });
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
     setBusy(true);
 
     setMessages((m) => [...m, { role: "assistant", text: "", streaming: true }]);
@@ -345,7 +417,7 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
                 </div>
               </div>
 
-              <div className="h-[480px] overflow-y-auto px-5 py-6">
+              <div ref={chatScrollRef} className="h-[480px] overflow-y-auto px-5 py-6">
                 {messages.length === 0 && (
                   <div className="flex h-full flex-col items-center justify-center text-center">
                     <Sparkles className="text-moei-bronze" size={28} />
@@ -460,7 +532,36 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
             </div>
 
             <div className="moei-card p-5">
-              <div className="moei-kicker">Try a prompt</div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-moei-cream">
+                  <Home className="text-moei-bronze" size={20} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-moei-ink">Loan rescheduling</div>
+                  <p className="mt-1 text-xs leading-relaxed text-moei-muted">
+                    Review your Sheikh Zayed Housing loan arrears and request a rescheduling plan.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <button
+                  onClick={() => send("I want to request loan rescheduling for my Sheikh Zayed Housing loan")}
+                  disabled={busy}
+                  className="rounded-xl border border-moei-line px-3 py-2 text-left text-sm font-medium text-moei-body transition hover:border-moei-bronze hover:text-moei-bronze disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Ask in chat
+                </button>
+                <Link
+                  href="/rescheduling"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-moei-bronze px-3 py-2 text-sm font-semibold text-white transition hover:bg-moei-ink"
+                >
+                  Open service <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+            <div className="moei-card p-5">
+              <div className="moei-kicker">Common questions</div>
               <ul className="mt-3 space-y-2">
                 {PROMPTS.map((p) => (
                   <li key={p}>
@@ -477,7 +578,7 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
               </ul>
             </div>
 
-            <DocumentUpload />
+            <DocumentUpload onSendToChat={(text) => send(text)} />
 
             <div className="rounded-2xl border border-moei-bronze/40 bg-moei-cream/50 p-5 text-xs text-moei-body">
               <div className="flex items-center gap-2 font-semibold text-moei-ink">
@@ -485,7 +586,10 @@ function ChatExperience({ session: uaepassSession }: { session: UaePassSession }
               </div>
               <p className="mt-2 leading-relaxed">
                 You can ask for a human agent at any time, or call our Customer
-                Happiness Centre on <span className="font-semibold text-moei-bronze">800 6634</span>{" "}
+                Happiness Centre on{" "}
+                <Link href="/call" className="font-semibold text-moei-bronze hover:underline">
+                  800 6634
+                </Link>{" "}
                 — available 24 hours a day, every day of the week.
               </p>
             </div>
@@ -517,8 +621,18 @@ function Bubble({ m, onPickReply, adminMode }: { m: Msg; onPickReply: (r: string
               : "rounded-2xl rounded-bl-md border border-moei-line bg-white text-moei-ink")
           }
         >
-          {displayText || (m.streaming ? "…" : "")}
+          {displayText ? <LinkedPhoneText text={displayText} /> : (m.streaming ? "…" : "")}
         </div>
+
+        {!isUser && !m.streaming && m.automationAction?.href && (
+          <Link
+            href={m.automationAction.href}
+            className="mt-2 inline-flex items-center gap-2 rounded-full bg-moei-bronze px-4 py-2 text-xs font-semibold text-white transition hover:bg-moei-ink"
+          >
+            {m.automationAction.label}
+            <ArrowRight size={13} />
+          </Link>
+        )}
 
         {!isUser && !m.streaming && hasCitations && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -601,6 +715,27 @@ function Bubble({ m, onPickReply, adminMode }: { m: Msg; onPickReply: (r: string
         )}
       </div>
     </div>
+  );
+}
+
+function LinkedPhoneText({ text }: { text: string }) {
+  const parts = text.split(/(800\s*6634)/g);
+  return (
+    <>
+      {parts.map((part, index) =>
+        /800\s*6634/.test(part) ? (
+          <Link
+            key={`${part}-${index}`}
+            href="/call"
+            className="font-semibold underline decoration-current/40 underline-offset-2"
+          >
+            {part}
+          </Link>
+        ) : (
+          <span key={`${part}-${index}`}>{part}</span>
+        ),
+      )}
+    </>
   );
 }
 

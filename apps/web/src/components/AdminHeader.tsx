@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Headphones, LayoutDashboard, ShieldCheck, ScrollText, ExternalLink, LogOut, ArrowLeft, PhoneCall, Users, Network, Home } from "lucide-react";
+import { Headphones, LayoutDashboard, ShieldCheck, ScrollText, ExternalLink, LogOut, ArrowLeft, PhoneCall, Users, Network, Home, Globe } from "lucide-react";
 
 const ADMIN_NAV = [
   { href: "/admin/exec", label: "Executive Dashboard", icon: LayoutDashboard },
+  { href: "/admin/intelligence", label: "Country Intelligence", icon: Globe },
   { href: "/admin/citizens", label: "Citizens", icon: Users },
   { href: "/admin/rescheduling", label: "Loan Rescheduling", icon: Home },
   { href: "/admin/copilot", label: "Agent Co-pilot", icon: Headphones },
@@ -21,6 +22,7 @@ export function AdminHeader({ user }: { user?: { email?: string; role?: string }
 
   function logout() {
     document.cookie = "hassan_admin=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+    localStorage.removeItem("agent42_admin_demo_session");
     router.push("/admin/login");
   }
 

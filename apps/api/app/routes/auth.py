@@ -171,7 +171,7 @@ async def uaepass_callback(
             status_code=302,
         )
 
-    # Build the Hassan session payload from the UAE PASS profile
+    # Build the Agent42 session payload from the UAE PASS profile
     idn = profile.get("idn") or ""
     session = {
         "iss": "uaepass-stage" if "qa-" in cfg.base_url else "uaepass",
@@ -222,7 +222,7 @@ async def me(request: Request) -> JSONResponse:
 
 @router.post("/logout")
 async def logout(request: Request) -> Response:
-    """Clear the Hassan session cookie + redirect to UAE PASS logout."""
+    """Clear the Agent42 session cookie + redirect to UAE PASS logout."""
     cfg = UaePassConfig.from_env()
     frontend = os.getenv("HASSAN_FRONTEND_URL", "http://localhost:3000")
     logout_target = f"{cfg.logout_url}?{urlencode({'redirect_uri': frontend})}"

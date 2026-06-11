@@ -1,8 +1,8 @@
-# UAE PASS Integration — Hassan
+# UAE PASS Integration — Agent42
 
 ## Three modes, one switch
 
-Hassan ships with a **wire-compatible UAE PASS integration** that runs in one of three modes,
+Agent42 ships with a **wire-compatible UAE PASS integration** that runs in one of three modes,
 controlled by a single environment variable.
 
 ```bash
@@ -18,7 +18,7 @@ Authentication Integration Toolkit v2.0).
 
 ## Mode 1 — `mock` (default, what you have today)
 
-A local OAuth 2.0 provider runs inside Hassan's API at `/auth/mock-uaepass/*`.
+A local OAuth 2.0 provider runs inside Agent42's API at `/auth/mock-uaepass/*`.
 
 **Endpoints (mock):**
 | What | URL |
@@ -66,7 +66,7 @@ Restart the API. Now the login button redirects to `https://qa-id.uaepass.ae/...
 UAEPASS_MODE=production
 UAEPASS_CLIENT_ID=<your-prod-client-id>
 UAEPASS_CLIENT_SECRET=<your-prod-client-secret>
-UAEPASS_REDIRECT_URI=https://hassan.moei.gov.ae/auth/uaepass/callback   # or wherever Hassan deploys
+UAEPASS_REDIRECT_URI=https://hassan.moei.gov.ae/auth/uaepass/callback   # or wherever Agent42 deploys
 ```
 
 Production requires:
@@ -90,7 +90,7 @@ Once those are in place, this is a config change — zero code change.
 
 ## Session storage
 
-Once logged in (any mode), Hassan stores the citizen's profile in an **HttpOnly signed cookie** named `hassan_session`:
+Once logged in (any mode), Agent42 stores the citizen's profile in an **HttpOnly signed cookie** named `hassan_session`:
 - HMAC-signed with `HASSAN_SESSION_SECRET` (32+ chars; change in prod)
 - 8-hour TTL
 - `SameSite=Lax` so it survives the UAE PASS redirect

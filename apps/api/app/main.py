@@ -1,5 +1,11 @@
+# ruff: noqa: E402
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load .env into os.environ so os.getenv() works across all modules
+load_dotenv(Path(__file__).resolve().parents[3] / ".env", override=False)
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -15,6 +21,8 @@ from .routes import (
     admin_auth,
     analytics,
     auth,
+    automation,
+    cases,
     chat,
     copilot,
     crm,
@@ -22,6 +30,7 @@ from .routes import (
     exec_dashboard,
     feedback,
     health,
+    intel,
     mock_uaepass,
     notifications,
     recordings,
@@ -35,7 +44,7 @@ from .routes import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    logger.info(f"Hassan API starting — env={settings.app_env}, primary={settings.primary_llm}")
+    logger.info(f"Agent42 API starting — env={settings.app_env}, primary={settings.primary_llm}")
     # Start the proactive-notifications dispatcher
     from .core.dispatcher import start_dispatcher_background, stop_dispatcher_background
     start_dispatcher_background()
@@ -43,11 +52,11 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         stop_dispatcher_background()
-        logger.info("Hassan API shutting down")
+        logger.info("Agent42 API shutting down")
 
 
 app = FastAPI(
-    title="Hassan — Channel Gateway",
+    title="Agent42 — Channel Gateway",
     description="Single ingress for web / voice / WhatsApp / mobile. Normalizes payloads, "
     "extracts user_id + language, dispatches to the LangGraph supervisor.",
     version="0.1.0",
@@ -57,10 +66,7 @@ app = FastAPI(
 app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://han-ringleted-dubitatively.ngrok-free.dev",
-    ],
+    allow_origins=get_settings().allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -79,6 +85,7 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(admin_auth.router)
 app.include_router(mock_uaepass.router)
+app.include_router(automation.router)
 app.include_router(chat.router)
 app.include_router(voice.router)
 app.include_router(whatsapp.router)
@@ -86,7 +93,9 @@ app.include_router(copilot.router)
 app.include_router(exec_dashboard.router)
 # v2 endpoints for omnichannel CRM + proactive engagement + analytics + live activity
 app.include_router(crm.router)
+app.include_router(cases.router)
 app.include_router(szhp.router)
+app.include_router(intel.router)
 app.include_router(notifications.router)
 app.include_router(recordings.router)
 app.include_router(documents.router)

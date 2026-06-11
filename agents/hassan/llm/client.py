@@ -104,7 +104,7 @@ def _jais_hf(*, temperature: float = 0.2) -> BaseChatModel:
 def _openai_chat(*, temperature: float = 0.3) -> BaseChatModel:
     """OpenAI GPT-4o-mini — fast, cheap, quality.
 
-    ~$0.15/M input tokens, ~$0.60/M output. ~$0.001 per Hassan turn.
+    ~$0.15/M input tokens, ~$0.60/M output. ~$0.001 per Agent42 turn.
     Used as the quality answering brain when OPENAI_API_KEY is set.
     """
     from langchain_openai import ChatOpenAI
@@ -128,8 +128,17 @@ def _claude_sonnet(*, temperature: float = 0.3) -> BaseChatModel:
     Used for General/Composer/Critic. Materially better than Llama 3.3 70B at federal-style
     customer service Q&A (citations, refusals, instruction following) and roughly the same
     latency (~5-10s warm).
+
+    langchain-anthropic is an optional dep (not in the default install). If the flag is set but
+    the package is missing, raise RuntimeError so the caller falls through to the Groq fallback.
     """
-    from langchain_anthropic import ChatAnthropic
+    try:
+        from langchain_anthropic import ChatAnthropic
+    except ImportError as e:
+        raise RuntimeError(
+            "langchain-anthropic is not installed; run `uv sync --extra anthropic` to use "
+            "HASSAN_USE_CLAUDE=1"
+        ) from e
 
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:

@@ -1,4 +1,4 @@
--- Hassan v2 schema additions: CRM cases + notifications + activity events.
+-- Agent42 v2 schema additions: CRM cases + notifications + activity events.
 -- Idempotent; apply with:  docker exec -i hassan-postgres psql -U hassan -d hassan < infra/postgres/init_v2.sql
 
 \connect hassan

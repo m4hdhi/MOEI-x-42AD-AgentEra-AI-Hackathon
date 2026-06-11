@@ -5,7 +5,7 @@ router = APIRouter(tags=["meta"])
 
 @router.get("/healthz")
 async def healthz() -> dict[str, str]:
-    return {"status": "ok", "agent": "Hassan"}
+    return {"status": "ok", "agent": "Agent42"}
 
 
 @router.get("/readyz")

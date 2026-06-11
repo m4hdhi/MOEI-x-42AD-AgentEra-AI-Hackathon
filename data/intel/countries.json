@@ -1,0 +1,195 @@
+{
+  "_meta": {
+    "purpose": "Country intelligence profiles for MOEI leadership — energy, infrastructure, economy, and UAE bilateral cooperation. Decision-ready, not raw search.",
+    "sources": [
+      "World Bank Data360 & WDI 2024", "IMF World Economic Outlook 2024-26", "UN Comtrade",
+      "UAE MoET bilateral trade reports", "UAE MOFA / WAM", "FocusEconomics 2024",
+      "Global Competitiveness & Logistics Performance Index"
+    ],
+    "home_country": "AE"
+  },
+  "countries": [
+    {
+      "code": "DE", "flag": "🇩🇪", "name": "Germany", "name_ar": "ألمانيا", "region": "Europe", "capital": "Berlin",
+      "population_m": 84.5, "gdp_usd_b": 4456, "gdp_per_capita_usd": 52746, "gdp_growth_pct": -0.1,
+      "sectors": {"services": 62.9, "industry": 26.5, "agriculture": 0.7},
+      "energy": {"electricity_access_pct": 100, "per_capita_kwh": 6100, "renewable_share_pct": 52, "renewable_target": "80% of electricity by 2030", "co2_per_capita_t": 7.7,
+        "notes": "Europe's largest energy market; accelerating green-hydrogen imports post-energy-transition. National Hydrogen Strategy targets 10 GW electrolysis by 2030."},
+      "infrastructure": {"logistics_index": 4.1, "key_assets": ["Port of Hamburg", "Frankfurt Airport", "Autobahn & rail freight network"],
+        "notes": "World-class logistics and advanced manufacturing; major importer of clean energy and industrial inputs."},
+      "sustainability": {"initiatives": ["Energiewende energy transition", "Hydrogen import partnerships", "EU Green Deal alignment"], "notes": "Strong decarbonisation mandate; seeking reliable green-molecule suppliers."},
+      "competitiveness": {"global_competitiveness_rank": 24, "ease_of_business_rank": 22, "innovation_rank": 8},
+      "projects": ["H2Global green-hydrogen import scheme", "LNG import terminals (Wilhelmshaven, Brunsbüttel)", "Offshore wind expansion (North Sea)"],
+      "uae": {"non_oil_trade_usd_b": 12.7, "companies": "335 German companies in the UAE; 37 UAE companies in Germany",
+        "trade_trend": "Non-oil trade ~AED reaching €12bn target, +30% since 2022",
+        "agreements": [
+          {"date": "Ongoing", "title": "Energy & Hydrogen Partnership", "detail": "UAE positioned as a reliable green-hydrogen and clean-energy supplier to Germany's import strategy (Masdar, ADNOC offtake discussions)."},
+          {"date": "2023", "title": "Industrial & Trade Cooperation", "detail": "Deepening non-oil trade across manufacturing, logistics, and technology; €12bn bilateral non-oil trade ambition."}
+        ],
+        "positioning": "Germany is a priority clean-energy export market and advanced-manufacturing partner."},
+      "opportunities": [
+        {"sector": "Energy", "title": "Green hydrogen offtake", "detail": "Long-term UAE→Germany green-hydrogen / ammonia supply agreements aligned with H2Global."},
+        {"sector": "Investment", "title": "Industrial decarbonisation", "detail": "Co-invest in electrolysis and clean-ammonia value chains serving German industry."},
+        {"sector": "Knowledge", "title": "Advanced manufacturing & mobility", "detail": "Technology transfer in hydrogen mobility, grid, and storage."}
+      ],
+      "risks": ["EU carbon-border (CBAM) compliance on exports", "Recessionary pressure on German industrial demand", "Competition from other hydrogen suppliers (Australia, Gulf peers)"]
+    },
+    {
+      "code": "US", "flag": "🇺🇸", "name": "United States", "name_ar": "الولايات المتحدة", "region": "North America", "capital": "Washington, D.C.",
+      "population_m": 335, "gdp_usd_b": 29168, "gdp_per_capita_usd": 86600, "gdp_growth_pct": 2.8,
+      "sectors": {"services": 77.6, "industry": 17.9, "agriculture": 0.9},
+      "energy": {"electricity_access_pct": 100, "per_capita_kwh": 12700, "renewable_share_pct": 23, "renewable_target": "100% carbon-pollution-free electricity by 2035", "co2_per_capita_t": 13.0,
+        "notes": "World's largest economy and a top energy producer; surging power demand from AI data centres is the strategic driver."},
+      "infrastructure": {"logistics_index": 3.9, "key_assets": ["Interstate & freight rail", "Major ports (LA/Long Beach, Houston)", "Aviation & data-centre clusters"],
+        "notes": "Massive build-out of AI data-centre and power infrastructure; magnet for sovereign capital."},
+      "sustainability": {"initiatives": ["Inflation Reduction Act clean-energy incentives", "Data-centre clean-power procurement"], "notes": "Clean-energy and nuclear revival tied to AI compute demand."},
+      "competitiveness": {"global_competitiveness_rank": 3, "ease_of_business_rank": 6, "innovation_rank": 3},
+      "projects": ["AI data-centre & power build-out", "Domestic critical-minerals & aluminium capacity", "Nuclear & advanced energy revival"],
+      "uae": {"non_oil_trade_usd_b": 34.4, "companies": "UAE is a top source of FDI into the US (>$1 trillion relationship)",
+        "trade_trend": "2024 bilateral trade $34.4bn; US exports to UAE ~$27bn; UAE provided the US its 3rd-largest trade surplus 3 years running",
+        "agreements": [
+          {"date": "2025", "title": "$1.4 Trillion 10-Year Investment Framework", "detail": "Historic UAE investment in US AI, clean energy, and advanced manufacturing — lifting total UAE investment to ~$2.4tn over the decade."},
+          {"date": "2025", "title": "ADQ–Energy Capital Partners energy JV", "detail": "$25bn venture for power generation serving data centres and AI projects."},
+          {"date": "2025", "title": "Emirates Global Aluminium smelter (Oklahoma)", "detail": "$4bn — first new US aluminium smelter in 45 years; nearly doubles US domestic output."},
+          {"date": "2025", "title": "Stargate UAE / US–UAE AI Acceleration", "detail": "G42, OpenAI, Oracle, NVIDIA, SoftBank, Cisco — 1GW AI compute foundation of a 5GW UAE–US AI campus."}
+        ],
+        "positioning": "Anchor strategic ally — AI, energy, advanced manufacturing, and defence."},
+      "opportunities": [
+        {"sector": "Investment", "title": "AI infrastructure & power", "detail": "Co-invest in US data-centre power generation (ADQ/ECP $25bn template) capturing AI-driven demand."},
+        {"sector": "Energy", "title": "Critical minerals & aluminium", "detail": "Secure critical-mineral supply (ADQ–Orion $1.2bn) and expand EGA's US footprint."},
+        {"sector": "Knowledge", "title": "AI & advanced tech", "detail": "Deepen G42/OpenAI/NVIDIA partnerships and responsible-AI standards leadership."}
+      ],
+      "risks": ["Investment-screening (CFIUS) sensitivity on tech/AI", "Policy shifts across administrations", "Concentration risk in mega-deals"]
+    },
+    {
+      "code": "MY", "flag": "🇲🇾", "name": "Malaysia", "name_ar": "ماليزيا", "region": "Asia-Pacific", "capital": "Kuala Lumpur",
+      "population_m": 33.6, "gdp_usd_b": 445, "gdp_per_capita_usd": 12620, "gdp_growth_pct": 5.1,
+      "sectors": {"services": 58.2, "industry": 37.0, "agriculture": 7.1},
+      "energy": {"electricity_access_pct": 100, "per_capita_kwh": 4966, "renewable_share_pct": 19, "renewable_target": "20% renewable in capacity mix", "co2_per_capita_t": 8.3,
+        "notes": "Full electricity access; rising industrial and transport energy demand; New Industrial Master Plan with clean-energy pillar."},
+      "infrastructure": {"logistics_index": 3.4, "key_assets": ["Port Klang", "Tanjung Pelepas (Strait of Malacca)", "Regional transhipment hubs"],
+        "notes": "Major regional transhipment on the world's busiest shipping lane; gateway for ASEAN logistics."},
+      "sustainability": {"initiatives": ["New Industrial Master Plan 2030", "Green hydrogen roadmap", "Green sukuk leadership"], "notes": "Islamic-finance and green-sukuk hub aligned with UAE sustainable-finance ambitions."},
+      "competitiveness": {"global_competitiveness_rank": 34, "ease_of_business_rank": 12, "innovation_rank": 33},
+      "projects": ["Masdar clean-energy & green-hydrogen cooperation", "Port & transhipment expansion", "Green-sukuk issuance programmes"],
+      "uae": {"non_oil_trade_usd_b": 5.5, "companies": "UAE designated Malaysia's primary gateway to MENA markets",
+        "trade_trend": "UAE–Malaysia CEPA signed Jan 2025, in force Oct 2025; non-oil trade $5.5bn",
+        "agreements": [
+          {"date": "Jan 2025", "title": "UAE–Malaysia CEPA (in force Oct 2025)", "detail": "Eliminates/reduces tariffs, streamlines customs, enhances services market access. Malaysia accounts for 32% of UAE's ASEAN trade."},
+          {"date": "Ongoing", "title": "Masdar Clean Energy & Green-Hydrogen MoU", "detail": "Renewables and green hydrogen aligned with Malaysia's New Industrial Master Plan and UAE's post-COP28 strategy."},
+          {"date": "Ongoing", "title": "Islamic Finance & Green Sukuk Cooperation", "detail": "MoUs with Bank Negara and the Securities Commission supporting UAE sustainable-finance ambitions."}
+        ],
+        "positioning": "ASEAN gateway and clean-energy + Islamic-finance partner."},
+      "opportunities": [
+        {"sector": "Energy", "title": "Green hydrogen & renewables", "detail": "Scale Masdar projects under the New Industrial Master Plan."},
+        {"sector": "Infrastructure", "title": "Ports & logistics", "detail": "Co-invest in Strait of Malacca transhipment capacity (AD Ports template)."},
+        {"sector": "Investment", "title": "Green sukuk & Islamic finance", "detail": "Joint green-sukuk issuance and sustainable-finance frameworks."}
+      ],
+      "risks": ["Commodity-price exposure", "Regional competition for transhipment volumes", "Implementation pace of CEPA provisions"]
+    },
+    {
+      "code": "IN", "flag": "🇮🇳", "name": "India", "name_ar": "الهند", "region": "Asia-Pacific", "capital": "New Delhi",
+      "population_m": 1441, "gdp_usd_b": 3937, "gdp_per_capita_usd": 2730, "gdp_growth_pct": 6.8,
+      "sectors": {"services": 48.4, "industry": 25.9, "agriculture": 16.8},
+      "energy": {"electricity_access_pct": 99.6, "per_capita_kwh": 1330, "renewable_share_pct": 22, "renewable_target": "500 GW non-fossil capacity by 2030", "co2_per_capita_t": 2.0,
+        "notes": "Fastest-growing major economy; vast renewable build-out and green-hydrogen mission; surging energy demand."},
+      "infrastructure": {"logistics_index": 3.4, "key_assets": ["Mundra & JNPT ports", "Dedicated freight corridors", "National logistics & highways programme"],
+        "notes": "Massive infrastructure programme (Gati Shakti); logistics-cost reduction priority."},
+      "sustainability": {"initiatives": ["National Green Hydrogen Mission", "500 GW renewables target", "International Solar Alliance (with UAE)"], "notes": "Co-founder ties with UAE on solar and green hydrogen."},
+      "competitiveness": {"global_competitiveness_rank": 40, "ease_of_business_rank": 63, "innovation_rank": 39},
+      "projects": ["India–Middle East–Europe Economic Corridor (IMEC)", "Green-hydrogen hubs", "Renewable mega-parks"],
+      "uae": {"non_oil_trade_usd_b": 57.8, "companies": "CEPA partner; UAE among India's top trade & investment partners",
+        "trade_trend": "UAE–India CEPA (2022) drove non-oil trade past $57bn; target $100bn by 2030",
+        "agreements": [
+          {"date": "2022", "title": "UAE–India CEPA", "detail": "Comprehensive Economic Partnership Agreement; tariff elimination, $100bn non-oil trade target by 2030."},
+          {"date": "2023", "title": "IMEC Corridor", "detail": "India–Middle East–Europe Economic Corridor — ports, rail, energy, and data connectivity with the UAE as a hub."},
+          {"date": "Ongoing", "title": "Energy & Food-Security Investment", "detail": "UAE investment in Indian renewables, logistics, and food corridors."}
+        ],
+        "positioning": "Top-tier trade partner and IMEC connectivity anchor."},
+      "opportunities": [
+        {"sector": "Infrastructure", "title": "IMEC corridor build-out", "detail": "AD Ports / DP World investment in IMEC ports, rail, and logistics nodes."},
+        {"sector": "Energy", "title": "Renewables & green hydrogen", "detail": "Masdar mega-parks and green-hydrogen offtake under India's mission."},
+        {"sector": "Investment", "title": "Food & logistics corridors", "detail": "Food-security parks and warehousing serving Gulf demand."}
+      ],
+      "risks": ["Regulatory complexity across states", "Currency & repatriation considerations", "Execution pace on corridor infrastructure"]
+    },
+    {
+      "code": "ID", "flag": "🇮🇩", "name": "Indonesia", "name_ar": "إندونيسيا", "region": "Asia-Pacific", "capital": "Jakarta (Nusantara in transition)",
+      "population_m": 281, "gdp_usd_b": 1475, "gdp_per_capita_usd": 5270, "gdp_growth_pct": 5.0,
+      "sectors": {"services": 44.4, "industry": 41.0, "agriculture": 12.4},
+      "energy": {"electricity_access_pct": 99.7, "per_capita_kwh": 1290, "renewable_share_pct": 13, "renewable_target": "23% renewables by 2025; net-zero 2060", "co2_per_capita_t": 2.6,
+        "notes": "Largest ASEAN economy; nickel & critical-minerals powerhouse; energy-transition financing priority."},
+      "infrastructure": {"logistics_index": 3.2, "key_assets": ["Tanjung Priok port", "New capital Nusantara", "Archipelagic ports programme"],
+        "notes": "Nusantara new-capital build-out and nationwide port/road programme; large infrastructure financing needs."},
+      "sustainability": {"initiatives": ["Just Energy Transition Partnership (JETP)", "Nickel value-chain greening", "Net-zero 2060"], "notes": "Seeking clean-energy investment and grid modernisation partners."},
+      "competitiveness": {"global_competitiveness_rank": 45, "ease_of_business_rank": 73, "innovation_rank": 54},
+      "projects": ["Nusantara new capital", "Masdar Cirata floating solar (largest in SE Asia)", "Nickel & battery value chain"],
+      "uae": {"non_oil_trade_usd_b": 4.0, "companies": "UAE–Indonesia CEPA (IUAE-CEPA) in force; sovereign investment via the Indonesia Investment Authority",
+        "trade_trend": "IUAE-CEPA (2023) boosting non-oil trade; UAE among largest Gulf investors",
+        "agreements": [
+          {"date": "2023", "title": "Indonesia–UAE CEPA", "detail": "Tariff elimination and investment facilitation; broadens non-oil trade and services."},
+          {"date": "2023", "title": "Masdar Cirata Floating Solar", "detail": "145 MW — one of Southeast Asia's largest floating solar plants, delivered by Masdar."},
+          {"date": "Ongoing", "title": "Sovereign Investment Cooperation", "detail": "UAE funds co-investing with the Indonesia Investment Authority across energy and infrastructure."}
+        ],
+        "positioning": "ASEAN renewable-energy showcase and infrastructure-investment destination."},
+      "opportunities": [
+        {"sector": "Energy", "title": "Solar & grid expansion", "detail": "Scale Masdar floating-solar and grid projects under JETP."},
+        {"sector": "Investment", "title": "Critical minerals & batteries", "detail": "Nickel and battery value-chain participation for the energy transition."},
+        {"sector": "Infrastructure", "title": "Nusantara & ports", "detail": "New-capital and archipelagic port/logistics investment."}
+      ],
+      "risks": ["Resource-nationalism policy shifts", "Permitting and land-acquisition timelines", "Grid-readiness constraints"]
+    },
+    {
+      "code": "SG", "flag": "🇸🇬", "name": "Singapore", "name_ar": "سنغافورة", "region": "Asia-Pacific", "capital": "Singapore",
+      "population_m": 5.9, "gdp_usd_b": 530, "gdp_per_capita_usd": 88450, "gdp_growth_pct": 2.6,
+      "sectors": {"services": 73.5, "industry": 24.4, "agriculture": 0.0},
+      "energy": {"electricity_access_pct": 100, "per_capita_kwh": 9200, "renewable_share_pct": 5, "renewable_target": "Import 4 GW low-carbon electricity by 2035", "co2_per_capita_t": 8.4,
+        "notes": "Energy-importer with limited domestic renewables; pioneering regional clean-power imports and a carbon-services hub."},
+      "infrastructure": {"logistics_index": 4.3, "key_assets": ["Port of Singapore (world's busiest transhipment)", "Changi Airport", "Tuas Mega Port"],
+        "notes": "Global maritime and aviation hub; benchmark smart-city and digital-government model."},
+      "sustainability": {"initiatives": ["Green Plan 2030", "Regional power grid imports", "Carbon-trading & green-finance hub"], "notes": "Reference model for UAE smart-city and sustainability benchmarking."},
+      "competitiveness": {"global_competitiveness_rank": 1, "ease_of_business_rank": 2, "innovation_rank": 5},
+      "projects": ["Tuas Mega Port (world's largest automated)", "Regional low-carbon electricity imports", "Smart-nation digital infrastructure"],
+      "uae": {"non_oil_trade_usd_b": 7.0, "companies": "UAE–Singapore CEPA concluded; logistics & aviation partnerships (DP World, Emirates)",
+        "trade_trend": "CEPA (2025) deepening non-oil trade, digital economy, and green-economy cooperation",
+        "agreements": [
+          {"date": "2025", "title": "UAE–Singapore CEPA", "detail": "Trade-in-services, digital economy, and green-economy chapters; benchmark FTA."},
+          {"date": "Ongoing", "title": "Smart-City & Digital Government", "detail": "Knowledge exchange on smart-nation, digital ID, and e-government benchmarking."},
+          {"date": "Ongoing", "title": "Maritime & Aviation Hubs", "detail": "Port and aviation connectivity cooperation between global hub operators."}
+        ],
+        "positioning": "Smart-city benchmark and digital/green-economy partner."},
+      "opportunities": [
+        {"sector": "Knowledge", "title": "Smart-city benchmarking", "detail": "Adopt Singapore smart-nation practices for UAE digital-government KPIs."},
+        {"sector": "Infrastructure", "title": "Maritime automation", "detail": "Tuas-style port automation know-how for AD Ports / DP World."},
+        {"sector": "Investment", "title": "Green & digital finance", "detail": "Carbon-services and green-finance hub cooperation."}
+      ],
+      "risks": ["Limited land/resource base", "High competition for hub status", "Exposure to global-trade cycles"]
+    },
+    {
+      "code": "BR", "flag": "🇧🇷", "name": "Brazil", "name_ar": "البرازيل", "region": "Latin America", "capital": "Brasília",
+      "population_m": 216, "gdp_usd_b": 2174, "gdp_per_capita_usd": 10070, "gdp_growth_pct": 3.0,
+      "sectors": {"services": 59.1, "industry": 20.7, "agriculture": 6.9},
+      "energy": {"electricity_access_pct": 99.8, "per_capita_kwh": 2900, "renewable_share_pct": 89, "renewable_target": "Maintain ~90% renewable electricity; scale green hydrogen", "co2_per_capita_t": 2.3,
+        "notes": "One of the world's cleanest power mixes (hydro + wind + solar); emerging green-hydrogen and biofuels export power."},
+      "infrastructure": {"logistics_index": 3.2, "key_assets": ["Port of Santos", "Pecém green-hydrogen hub", "Agri-logistics corridors"],
+        "notes": "Pecém hub positioning Brazil as a green-hydrogen exporter; large agri-logistics base."},
+      "sustainability": {"initiatives": ["Green-hydrogen export hubs (Pecém)", "Ethanol & biofuels leadership", "Amazon & energy-transition agenda"], "notes": "Renewable-rich; natural green-molecule export partner."},
+      "competitiveness": {"global_competitiveness_rank": 57, "ease_of_business_rank": 124, "innovation_rank": 49},
+      "projects": ["Pecém green-hydrogen export hub", "Offshore wind pipeline", "Smart-port modernisation"],
+      "uae": {"non_oil_trade_usd_b": 9.0, "companies": "Mercosur–UAE CEPA under negotiation; AD Ports investment in Brazil logistics",
+        "trade_trend": "Growing non-oil trade; UAE port and energy investment expanding in Latin America",
+        "agreements": [
+          {"date": "Ongoing", "title": "AD Ports Latin America Investment", "detail": "Port and logistics investment establishing UAE presence in Brazilian trade gateways."},
+          {"date": "Ongoing", "title": "Green-Hydrogen & Energy Cooperation", "detail": "Interest in Pecém green-hydrogen offtake and renewable co-investment."},
+          {"date": "In progress", "title": "Mercosur–UAE CEPA", "detail": "Trade-agreement negotiations to open Latin American markets."}
+        ],
+        "positioning": "Latin American energy & ports gateway and green-molecule supplier."},
+      "opportunities": [
+        {"sector": "Energy", "title": "Green-hydrogen offtake (Pecém)", "detail": "Secure green-hydrogen / ammonia supply from Brazil's renewable-rich northeast."},
+        {"sector": "Infrastructure", "title": "Smart ports", "detail": "AD Ports modernisation of Brazilian port and logistics assets."},
+        {"sector": "Investment", "title": "Renewables & biofuels", "detail": "Co-invest in offshore wind, solar, and biofuel value chains."}
+      ],
+      "risks": ["Political & fiscal cycle volatility", "Logistics-cost and permitting bottlenecks", "FX exposure"]
+    }
+  ]
+}

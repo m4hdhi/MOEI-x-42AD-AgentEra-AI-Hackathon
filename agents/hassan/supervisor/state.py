@@ -1,7 +1,7 @@
 from typing import Annotated, Literal, TypedDict
 from operator import add
 
-Channel = Literal["web", "voice", "whatsapp", "mobile"]
+Channel = Literal["web", "voice", "whatsapp", "mobile", "sign"]
 Language = Literal["ar", "en", "auto"]
 Service = Literal["housing", "energy", "infrastructure", "maritime", "transport", "unknown"]
 
@@ -45,6 +45,7 @@ class SupervisorState(TypedDict, total=False):
     # Escalation
     escalated: bool
     escalation_reason: str | None
+    escalation_signals: list[str]   # dataset-grounded triggers that fired (FAQ Q12/Q13)
 
     # Final
     reply: str
@@ -59,6 +60,7 @@ class SupervisorState(TypedDict, total=False):
     urgency: str                    # low | medium | high
     life_events: list[str]          # detected life events → proactive service recs
     autonomous: bool                # case fully resolved by the agent, no human needed
+    self_served: bool               # citizen got a direct FAQ/knowledge answer → auto-close case
     correlation_id: str
     next_best_action: str           # one-line action hint for the human co-pilot
     escalation_risk: dict           # ML-predicted complaint/escalation risk {risk, band, factors}

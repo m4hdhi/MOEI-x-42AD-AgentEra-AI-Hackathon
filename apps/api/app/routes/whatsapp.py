@@ -10,18 +10,23 @@ background and push the actual reply via Twilio REST API as a follow-up message.
 
 from __future__ import annotations
 
-import asyncio
+import json
 import os
+import secrets
+from collections.abc import Awaitable, Callable
 
-import random
-
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Response
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request, Response
+from fastapi.responses import PlainTextResponse
 from hassan.supervisor.graph import run_supervisor
 from loguru import logger
 
+from ..core import whatsapp_meta
 from ..core.db import db_cursor
 
 router = APIRouter(prefix="/whatsapp", tags=["whatsapp"])
+
+# Reply transport: (to, body) -> None. Lets one supervisor pipeline serve both Twilio and Meta.
+SendFn = Callable[[str, str], Awaitable[None]]
 
 
 # Twilio Sandbox WhatsApp number (the From: when we send back)
@@ -33,8 +38,8 @@ def _synthetic_emirates_id() -> str:
 
     Format: 784-YYYY-NNNNNNN-C. Stamped to make obvious it's not real (year 9999).
     """
-    seq = random.randint(1_000_000, 9_999_999)
-    check = random.randint(0, 9)
+    seq = 1_000_000 + secrets.randbelow(9_000_000)
+    check = secrets.randbelow(10)
     return f"784-9999-{seq}-{check}"
 
 
@@ -47,7 +52,8 @@ def _resolve_identity(sender: str, profile_name: str | None) -> tuple[str, str |
     try:
         with db_cursor() as cur:
             cur.execute(
-                "SELECT user_id, display_name, is_demo_guest FROM whatsapp_identities WHERE wa_number = %s",
+                "SELECT user_id, display_name, is_demo_guest "
+                "FROM whatsapp_identities WHERE wa_number = %s",
                 (sender,),
             )
             row = cur.fetchone()
@@ -99,9 +105,9 @@ def _verify_signature(public_url: str, params: dict[str, str], sig: str) -> bool
 
 
 async def _process_and_reply(
-    *, sender: str, body: str, sid: str, profile_name: str | None = None
+    *, sender: str, body: str, sid: str, profile_name: str | None = None, send: SendFn
 ) -> None:
-    """Run supervisor in the background, then push the reply via Twilio REST API."""
+    """Run the supervisor in the background, then push the reply via ``send`` (Twilio or Meta)."""
     user_id, display_name, is_new_guest = _resolve_identity(sender, profile_name)
     logger.info(f"wa_bg: supervisor for {sender} → {user_id} new_guest={is_new_guest}")
     try:
@@ -121,21 +127,23 @@ async def _process_and_reply(
         if is_new_guest:
             reply = (
                 "👋 Welcome to the Ministry of Energy and Infrastructure.\n"
-                "You can ask about housing, energy, transport, maritime, or infrastructure services in Arabic or English.\n\n"
+                "You can ask about housing, energy, transport, maritime, or infrastructure "
+                "services in Arabic or English.\n\n"
                 + reply
             )
-        await _send_whatsapp(to=sender, body=reply)
+        await send(sender, reply)
         logger.info(f"wa_bg: sent reply ({len(reply)} chars) to {sender}")
     except Exception as e:
         logger.exception(f"wa_bg: failed for {sender}: {e}")
         # Best-effort error message so the citizen isn't left hanging.
         try:
-            await _send_whatsapp(
-                to=sender,
-                body="Sorry — Hassan is having a brief technical issue. Please try again in a moment, or call 800 6634.",
+            await send(
+                sender,
+                "Sorry — Agent42 is having a brief technical issue. "
+                "Please try again in a moment, or call 800 6634.",
             )
-        except Exception:
-            pass
+        except Exception as inner:
+            logger.debug(f"wa_bg: error-fallback send failed: {inner}")
 
 
 async def _send_whatsapp(*, to: str, body: str) -> None:
@@ -158,14 +166,38 @@ async def _send_whatsapp(*, to: str, body: str) -> None:
             logger.warning(f"twilio_send_failed: {r.status_code} {r.text[:200]}")
 
 
+async def _twilio_send(to: str, body: str) -> None:
+    """Reply transport for the Twilio sandbox path."""
+    await _send_whatsapp(to=to, body=body)
+
+
+async def _meta_send(to: str, body: str) -> None:
+    """Reply transport for the Meta Cloud API path."""
+    await whatsapp_meta.send_text(to_wa_id=to, body=body)
+
+
 @router.get("/sandbox-info")
 def sandbox_info() -> dict:
-    """Public info for the 'Try on WhatsApp' card on the citizen site."""
+    """Public info for the 'Try on WhatsApp' card on the citizen site.
+
+    Prefers the Meta Cloud API number ("MOEI Assistant (Demo)", no join code) when
+    META_WHATSAPP_NUMBER is set; otherwise falls back to the Twilio sandbox join flow.
+    """
+    from urllib.parse import quote
+
+    meta_number = os.getenv("META_WHATSAPP_NUMBER", "").strip()
+    if meta_number:
+        digits = "".join(c for c in meta_number if c.isdigit())
+        return {
+            "number": meta_number,
+            "join_code": "",  # Meta needs no sandbox join code
+            "wa_link": f"https://wa.me/{digits}",
+            "note": "Replies arrive within seconds. Available in Arabic and English.",
+        }
+
     join = os.getenv("TWILIO_SANDBOX_JOIN", "join nose-bell")
     number = os.getenv("TWILIO_SANDBOX_NUMBER", "+14155238886")
     digits = "".join(c for c in number if c.isdigit())
-    from urllib.parse import quote
-
     wa_link = f"https://wa.me/{digits}?text={quote(join)}"
     return {
         "number": number,
@@ -202,7 +234,12 @@ async def twilio_inbound(request: Request, background: BackgroundTasks) -> Respo
 
     # Kick off the actual work in the background. FastAPI runs it after we return.
     background.add_task(
-        _process_and_reply, sender=sender, body=body, sid=sid, profile_name=profile_name
+        _process_and_reply,
+        sender=sender,
+        body=body,
+        sid=sid,
+        profile_name=profile_name,
+        send=_twilio_send,
     )
 
     # Send a tiny ACK so the citizen sees a typing/received state immediately.
@@ -211,3 +248,48 @@ async def twilio_inbound(request: Request, background: BackgroundTasks) -> Respo
         content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
         media_type="application/xml",
     )
+
+
+@router.get("/webhook")
+async def meta_verify(
+    hub_mode: str | None = Query(None, alias="hub.mode"),
+    hub_verify_token: str | None = Query(None, alias="hub.verify_token"),
+    hub_challenge: str | None = Query(None, alias="hub.challenge"),
+) -> Response:
+    """Meta webhook verification handshake (GET). Echo the challenge when the token matches."""
+    challenge = whatsapp_meta.verify_webhook(hub_mode, hub_verify_token, hub_challenge)
+    if challenge is None:
+        raise HTTPException(status_code=403, detail="verification failed")
+    return PlainTextResponse(content=challenge)
+
+
+@router.post("/webhook")
+async def meta_inbound(request: Request, background: BackgroundTasks) -> Response:
+    """Meta WhatsApp webhook (POST): validate signature, ACK 200 fast, process in background."""
+    raw = await request.body()
+    if not whatsapp_meta.verify_signature(raw, request.headers.get("X-Hub-Signature-256")):
+        logger.warning("meta_webhook: invalid signature")
+        raise HTTPException(status_code=403, detail="invalid signature")
+
+    try:
+        payload = json.loads(raw or b"{}")
+    except json.JSONDecodeError:
+        # ACK malformed bodies so Meta stops retrying.
+        return Response(status_code=200)
+
+    for msg in whatsapp_meta.parse_inbound(payload):
+        sender = whatsapp_meta.canonical_wa_key(msg.wa_id)
+        logger.info(
+            f"whatsapp_in(meta): from={sender} name={msg.profile_name!r} text={msg.text[:80]!r}"
+        )
+        background.add_task(
+            _process_and_reply,
+            sender=sender,
+            body=msg.text,
+            sid=msg.message_id,
+            profile_name=msg.profile_name,
+            send=_meta_send,
+        )
+
+    # Always 200 quickly so Meta doesn't retry the delivery.
+    return Response(status_code=200)

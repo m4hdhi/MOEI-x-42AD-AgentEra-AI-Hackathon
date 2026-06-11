@@ -159,7 +159,7 @@ async def fetch_userinfo(cfg: UaePassConfig, access_token: str) -> dict:
 
 def emirates_id_from_idn(idn: str) -> str:
     """UAE PASS returns the IDN as a 15-digit string (e.g. 784200400000001).
-    Convert to the dashed display format 784-YYYY-XXXXXXX-X used elsewhere in Hassan.
+    Convert to the dashed display format 784-YYYY-XXXXXXX-X used elsewhere in Agent42.
     """
     s = "".join(c for c in idn if c.isdigit())
     if len(s) != 15:

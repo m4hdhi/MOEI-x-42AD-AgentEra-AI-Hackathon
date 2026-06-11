@@ -1,4 +1,4 @@
-"""Seed Hassan's Postgres tables with realistic synthetic data so the dashboards have content.
+"""Seed Agent42's Postgres tables with realistic synthetic data so the dashboards have content.
 
   uv run python scripts/seed_omnichannel.py
 
@@ -284,7 +284,7 @@ def seed_activity_events() -> None:
 
 
 def main() -> None:
-    print(f"Seeding Hassan omnichannel demo data at {NOW.isoformat()}")
+    print(f"Seeding Agent42 omnichannel demo data at {NOW.isoformat()}")
     case_numbers = seed_cases(200)
     seed_notifications(case_numbers)
     seed_activity_events()

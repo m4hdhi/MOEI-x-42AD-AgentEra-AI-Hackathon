@@ -171,7 +171,7 @@ async def _crawl_lang(lang: str, cap: int, resume: bool) -> tuple[int, int]:
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         ctx = await browser.new_context(
-            user_agent="Mozilla/5.0 (MOEI-Hassan-Crawler/1.0; +hassan-demo)",
+            user_agent="Mozilla/5.0 (MOEI-Agent42-Crawler/1.0; +hassan-demo)",
             locale="en-AE" if lang == "en" else "ar-AE",
         )
         page = await ctx.new_page()
