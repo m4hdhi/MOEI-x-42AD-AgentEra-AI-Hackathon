@@ -1,7 +1,7 @@
 from typing import Annotated, Literal, TypedDict
 from operator import add
 
-Channel = Literal["web", "voice", "whatsapp", "mobile"]
+Channel = Literal["web", "voice", "whatsapp", "mobile", "sign"]
 Language = Literal["ar", "en", "auto"]
 Service = Literal["housing", "energy", "infrastructure", "maritime", "transport", "unknown"]
 

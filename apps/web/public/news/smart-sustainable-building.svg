@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" role="img" aria-label="Smart sustainable ministry building">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#b9d8e7"/>
+      <stop offset=".48" stop-color="#f6dfbd"/>
+      <stop offset="1" stop-color="#f8f4ec"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" x2="1">
+      <stop offset="0" stop-color="#e7f3f1"/>
+      <stop offset="1" stop-color="#8eb9bb"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#1d6f55"/>
+      <stop offset="1" stop-color="#7dbf72"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="680" fill="url(#sky)"/>
+  <circle cx="95" cy="395" r="54" fill="#ffe5a3" opacity=".9"/>
+  <path d="M0 420c180-55 296-45 428 7s248 54 387 10 255-38 385 4v239H0z" fill="#d9c59f"/>
+  <path d="M0 486c224-48 372-28 540 30 235 82 430 36 660 4v160H0z" fill="#bba37a" opacity=".45"/>
+  <g transform="translate(340 116)">
+    <path d="M306 0h190l58 58v362H248V58z" fill="#e7d8be" stroke="#b9975b" stroke-width="8"/>
+    <path d="M0 236h300l72 72v212H0z" fill="#e7d8be" stroke="#b9975b" stroke-width="8"/>
+    <path d="M300 156h322l82 82v282H300z" fill="#e7d8be" stroke="#b9975b" stroke-width="8"/>
+    <path d="M338 34h136l42 42v292H300V76z" fill="url(#green)" opacity=".95"/>
+    <path d="M48 272h220l50 50v154H48z" fill="url(#glass)"/>
+    <path d="M348 202h240l58 58v216H348z" fill="url(#green)" opacity=".95"/>
+    <g fill="#1f403d" opacity=".24">
+      <rect x="330" y="38" width="18" height="326"/>
+      <rect x="386" y="38" width="18" height="326"/>
+      <rect x="442" y="38" width="18" height="326"/>
+      <rect x="306" y="116" width="210" height="12"/>
+      <rect x="306" y="204" width="210" height="12"/>
+      <rect x="306" y="292" width="210" height="12"/>
+    </g>
+    <g fill="#2f6f63" opacity=".75">
+      <circle cx="372" cy="105" r="18"/>
+      <circle cx="430" cy="168" r="24"/>
+      <circle cx="372" cy="245" r="19"/>
+      <circle cx="505" cy="254" r="20"/>
+      <circle cx="552" cy="316" r="24"/>
+    </g>
+    <path d="M376 228h210l38 38v38H366z" fill="#293b42" opacity=".55"/>
+    <path d="M390 238h180l30 30H378z" fill="#264e66"/>
+    <g stroke="#b8d9ee" stroke-width="3" opacity=".7">
+      <path d="M408 239v61M456 239v61M504 239v61M552 244v56"/>
+      <path d="M386 258h214M374 280h238"/>
+    </g>
+    <rect x="466" y="354" width="116" height="122" rx="12" fill="#f7f0e3"/>
+    <rect x="492" y="382" width="64" height="94" fill="#b6dedf"/>
+  </g>
+  <g fill="#406f58" opacity=".9">
+    <ellipse cx="215" cy="565" rx="80" ry="18"/>
+    <ellipse cx="978" cy="573" rx="88" ry="20"/>
+    <ellipse cx="110" cy="602" rx="54" ry="12"/>
+    <ellipse cx="684" cy="590" rx="68" ry="16"/>
+  </g>
+  <g stroke="#c9f2ff" stroke-width="6" fill="none" opacity=".78" filter="url(#soft)">
+    <path d="M-20 385c205-95 315 65 504-18 190-83 265-40 404 6 120 40 207-10 332-78"/>
+    <path d="M-20 410c185-60 320 45 500-9 204-62 300-16 444 40 112 43 188-16 300-74"/>
+  </g>
+  <g stroke="#ffffff" stroke-width="2" fill="none" opacity=".8">
+    <path d="M-20 385c205-95 315 65 504-18 190-83 265-40 404 6 120 40 207-10 332-78"/>
+    <path d="M-20 410c185-60 320 45 500-9 204-62 300-16 444 40 112 43 188-16 300-74"/>
+  </g>
+</svg>

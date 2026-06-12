@@ -176,7 +176,8 @@ def overdue_cases() -> list[dict]:
 def volume_forecast(days: int = Query(7, ge=1, le=30)) -> dict:
     """Seasonal-naive forecast: predicted demand for the next N days = same weekday last week.
 
-    Falls back to the median when there isn't enough history.
+    Falls back to the live median when there is some history. If there is no history, returns
+    zeros instead of invented demo volume.
     """
     with db_cursor() as cur:
         cur.execute(
@@ -191,9 +192,8 @@ def volume_forecast(days: int = Query(7, ge=1, le=30)) -> dict:
     if not history:
         history_by_day = {}
 
-    # Median for fallback
     counts = list(history_by_day.values())
-    median = int(sorted(counts)[len(counts) // 2]) if counts else 50
+    median = int(sorted(counts)[len(counts) // 2]) if counts else 0
 
     today = datetime.utcnow().date()
     actual = []
@@ -210,12 +210,12 @@ def volume_forecast(days: int = Query(7, ge=1, le=30)) -> dict:
             base = history_by_day[ref]
         else:
             base = median
-        # Add a small 5% upward trend bias
-        forecast.append({"day": d.isoformat(), "value": round(base * 1.05), "kind": "forecast"})
+        # Add a small 5% upward trend bias only when we have live history.
+        forecast.append({"day": d.isoformat(), "value": round(base * 1.05) if counts else 0, "kind": "forecast"})
 
     return {
         "as_of": today.isoformat(),
-        "method": "seasonal-naive (lag-7) + 5% trend",
+        "method": "seasonal-naive (lag-7) + 5% trend from live cases" if counts else "not enough live case history for forecasting yet",
         "history": actual,
         "forecast": forecast,
     }

@@ -45,7 +45,7 @@ def canonical_wa_key(wa_id: str) -> str:
 
 
 def verify_webhook(mode: str | None, token: str | None, challenge: str | None) -> str | None:
-    """GET handshake. Echo the challenge when the verify token matches; else None (→ caller 403s)."""
+    """Echo the challenge when the Meta verify token matches."""
     expected = os.getenv("META_WHATSAPP_VERIFY_TOKEN", "")
     if mode == "subscribe" and token and expected and hmac.compare_digest(token, expected):
         return challenge or ""

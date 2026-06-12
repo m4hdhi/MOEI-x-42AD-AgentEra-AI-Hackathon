@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, User, Globe, ChevronDown, LogIn, LogOut } from "lucide-react";
+import { User, Globe, ChevronDown, LogIn, LogOut } from "lucide-react";
 import { loginUrl, logoutAndRedirect, useUaePassSession } from "@/lib/auth";
 import { AccessibilityToggle } from "@/components/AccessibilityToggle";
+import { SmartSearch } from "@/components/SmartSearch";
 import { useLang } from "@/lib/i18n";
 
 export function MoeiHeader() {
@@ -32,6 +33,7 @@ export function MoeiHeader() {
     { href: "/mobile", label: t("Mobile App", "تطبيق الهاتف") },
     { href: "/call", label: t("Call Centre", "مركز الاتصال") },
     { href: "/sign", label: t("Sign Language", "لغة الإشارة") },
+    { href: "/automation", label: t("Task Automation", "أتمتة المهام") },
   ];
 
   return (
@@ -63,12 +65,8 @@ export function MoeiHeader() {
           {/* Right side: search + UAE PASS auth */}
           <div className="flex items-center gap-3">
             {/* Search — bronze border, MOEI style */}
-            <div className="hidden items-center gap-2 rounded-lg border-2 border-moei-bronze bg-white px-4 py-2 lg:flex lg:w-72">
-              <input
-                placeholder={t("Search in website", "ابحث في الموقع")}
-                className="w-full bg-transparent text-sm outline-none placeholder:text-moei-muted"
-              />
-              <Search size={18} className="text-moei-bronze" />
+            <div className="hidden lg:block lg:w-80">
+              <SmartSearch compact placeholder={t("Search in website", "ابحث في الموقع")} />
             </div>
 
             {/* UAE PASS auth state */}
@@ -129,12 +127,14 @@ export function MoeiHeader() {
             </ul>
 
             <div className="hidden items-center gap-4 text-moei-muted md:flex">
-              <button
+              <Link
+                href="/account"
                 className="transition-colors hover:text-moei-bronze"
                 aria-label={t("Citizen account", "حساب المتعامل")}
+                title={t("Citizen account", "حساب المتعامل")}
               >
                 <User size={18} />
-              </button>
+              </Link>
               <AccessibilityToggle />
               {/* Language switch — toggles the whole app between English and Arabic (RTL). */}
               <button

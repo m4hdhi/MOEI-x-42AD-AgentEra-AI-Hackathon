@@ -27,6 +27,15 @@ export default function AdminLoginPage() {
         const j = await r.json().catch(() => ({}));
         throw new Error(j.detail || `HTTP ${r.status}`);
       }
+      const data = await r.json();
+      localStorage.setItem(
+        "agent42_admin_demo_session",
+        JSON.stringify({
+          email: data.email || email,
+          role: data.role || "agent",
+          expires_at: Date.now() + 8 * 60 * 60 * 1000,
+        }),
+      );
       router.push("/admin/exec");
     } catch (e: any) {
       setError(e.message || String(e));

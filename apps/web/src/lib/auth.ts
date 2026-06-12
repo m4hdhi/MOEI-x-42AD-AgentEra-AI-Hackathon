@@ -23,6 +23,11 @@ export function useUaePassSession(): { session: UaePassSession | null; loading: 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (window.location.pathname.startsWith("/admin")) {
+      setSession(null);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     fetch(`${API_URL}/auth/me`, { credentials: "include" })
       .then(async (r) => {

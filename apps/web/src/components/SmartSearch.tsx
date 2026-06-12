@@ -16,7 +16,13 @@ type Hit = {
   url?: string;
 };
 
-export function SmartSearch() {
+export function SmartSearch({
+  compact = false,
+  placeholder = "Search MOEI services — try 'boat', 'housing', 'power outage'…",
+}: {
+  compact?: boolean;
+  placeholder?: string;
+}) {
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
   const [busy, setBusy] = useState(false);
@@ -47,15 +53,28 @@ export function SmartSearch() {
   }, [q]);
 
   return (
-    <div className="relative w-full max-w-2xl">
-      <div className="flex items-center gap-3 rounded-full border-2 border-moei-bronze bg-white px-5 py-3 shadow-sm transition focus-within:shadow-md">
-        <Search size={18} className="text-moei-bronze" />
+    <div className={compact ? "relative w-full" : "relative w-full max-w-2xl"}>
+      <div
+        className={
+          "flex items-center bg-white shadow-sm transition focus-within:shadow-md " +
+          (compact
+            ? "gap-2 rounded-lg border-2 border-moei-bronze px-4 py-2"
+            : "gap-3 rounded-full border-2 border-moei-bronze px-5 py-3")
+        }
+      >
+        <Search size={compact ? 16 : 18} className="text-moei-bronze" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search MOEI services — try 'boat', 'housing', 'power outage'…"
+          placeholder={placeholder}
           className="flex-1 bg-transparent text-sm font-medium text-moei-ink outline-none placeholder:text-moei-muted"
           onFocus={() => q && setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && q.trim()) {
+              e.preventDefault();
+              window.location.href = `/chat?q=${encodeURIComponent(q.trim())}`;
+            }
+          }}
         />
         {q && (
           <button
@@ -73,14 +92,14 @@ export function SmartSearch() {
       </div>
 
       {open && hits.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-2 max-h-[420px] overflow-y-auto rounded-2xl border border-moei-line bg-white shadow-xl">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[420px] overflow-y-auto rounded-2xl border border-moei-line bg-white shadow-xl">
           <ul className="divide-y divide-moei-line/60">
             {hits.map((h) => (
               <li key={h.id}>
                 <a
-                  href={h.url || "#"}
+                  href={h.url || `/chat?q=${encodeURIComponent(q)}`}
                   target={h.url ? "_blank" : undefined}
-                  rel="noreferrer"
+                  rel={h.url ? "noreferrer" : undefined}
                   className="flex items-start gap-3 px-5 py-3 transition hover:bg-moei-cream"
                 >
                   <div className="mt-0.5 rounded-md bg-moei-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-moei-bronze">
@@ -109,7 +128,7 @@ export function SmartSearch() {
         </div>
       )}
       {open && q.length >= 2 && hits.length === 0 && !busy && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-2 rounded-2xl border border-moei-line bg-white p-4 text-xs text-moei-muted shadow-md">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-moei-line bg-white p-4 text-xs text-moei-muted shadow-md">
           No services matched <span className="font-semibold text-moei-ink">{q}</span>. Try a broader keyword.
         </div>
       )}

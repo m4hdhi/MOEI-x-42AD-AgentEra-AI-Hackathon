@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, Line, LineChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -72,6 +72,7 @@ type VoiceStats = {
 };
 type GeoItem = { emirate: string; cases: number; avg_sentiment: number | null; escalations: number; open_cases: number; status: string };
 type Geo = { items: GeoItem[]; hotspots: GeoItem[]; national_avg_sentiment: number };
+type LiveStatus = "connecting" | "connected" | "reconnecting" | "offline";
 
 // ---- Constants ------------------------------------------------------------
 
@@ -101,36 +102,63 @@ export default function ExecPage() {
   const [voice, setVoice] = useState<VoiceStats | null>(null);
   const [geo, setGeo] = useState<Geo | null>(null);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [sourceErrors, setSourceErrors] = useState<Record<string, string>>({});
+  const [liveStatus, setLiveStatus] = useState<LiveStatus>("connecting");
   const sseRef = useRef<EventSource | null>(null);
+  const fetchAllRef = useRef<() => void>(() => {});
 
   useEffect(() => {
-    const fetchAll = () => {
-      fetch(`${API_URL}/crm/stats`).then(r => r.json()).then(setStats).catch(() => {});
-      fetch(`${API_URL}/analytics/volume-forecast?days=7`).then(r => r.json()).then(setForecast).catch(() => {});
-      fetch(`${API_URL}/analytics/sentiment-trend?days=14`).then(r => r.json()).then(setSentiment).catch(() => {});
-      fetch(`${API_URL}/analytics/heatmap`).then(r => r.json()).then(setHeatmap).catch(() => {});
-      fetch(`${API_URL}/analytics/escalation-risk?limit=6`).then(r => r.json()).then(setRisks).catch(() => {});
-      fetch(`${API_URL}/notifications/stats`).then(r => r.json()).then(setNotifs).catch(() => {});
-      fetch(`${API_URL}/crm/kpis`).then(r => r.json()).then(setOpKpis).catch(() => {});
-      fetch(`${API_URL}/feedback/stats`).then(r => r.json()).then(setFeedback).catch(() => {});
-      fetch(`${API_URL}/recordings/stats`).then(r => r.json()).then(setVoice).catch(() => {});
-      fetch(`${API_URL}/analytics/geo-satisfaction`).then(r => r.json()).then(setGeo).catch(() => {});
+    const fetchJson = async <T,>(key: string, path: string, setter: (v: T) => void) => {
+      try {
+        const r = await fetch(`${API_URL}${path}`, { cache: "no-store" });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        setter(await r.json());
+        setSourceErrors((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+      } catch (e: any) {
+        setSourceErrors((prev) => ({ ...prev, [key]: e?.message || "unreachable" }));
+      }
     };
+    const fetchAll = () => {
+      fetchJson<CrmStats>("Cases", "/crm/stats", setStats);
+      fetchJson<Forecast>("Forecast", "/analytics/volume-forecast?days=7", setForecast);
+      fetchJson<Sentiment>("Sentiment", "/analytics/sentiment-trend?days=14", setSentiment);
+      fetchJson<Heatmap>("Workforce", "/analytics/heatmap", setHeatmap);
+      fetchJson<Risk>("Risk", "/analytics/escalation-risk?limit=6", setRisks);
+      fetchJson<Notifs>("Notifications", "/notifications/stats", setNotifs);
+      fetchJson<OpKpis>("Operational KPIs", "/crm/kpis", setOpKpis);
+      fetchJson<Feedback>("Feedback", "/feedback/stats", setFeedback);
+      fetchJson<VoiceStats>("Voice", "/recordings/stats", setVoice);
+      fetchJson<Geo>("Geo", "/analytics/geo-satisfaction", setGeo);
+      fetchJson<{ items: ActivityEvent[] }>("Activity", "/activity?limit=60", (d) => setActivity(d.items || []));
+      setLastUpdated(new Date());
+    };
+    fetchAllRef.current = fetchAll;
     fetchAll();
-    const t = setInterval(fetchAll, 8000);
+    const t = setInterval(fetchAll, 5000);
 
     // SSE — live activity stream
     try {
+      setLiveStatus("connecting");
       const es = new EventSource(`${API_URL}/activity/stream`);
+      es.onopen = () => setLiveStatus("connected");
       es.addEventListener("activity", (ev: MessageEvent) => {
         try {
           const e: ActivityEvent = JSON.parse(ev.data);
           setActivity(prev => [e, ...prev.filter(x => x.id !== e.id)].slice(0, 60));
+          fetchAllRef.current();
         } catch {}
       });
-      es.onerror = () => { /* let it retry */ };
+      es.addEventListener("ping", () => setLiveStatus("connected"));
+      es.onerror = () => setLiveStatus("reconnecting");
       sseRef.current = es;
-    } catch {}
+    } catch {
+      setLiveStatus("offline");
+    }
 
     return () => {
       clearInterval(t);
@@ -149,13 +177,21 @@ export default function ExecPage() {
               </span>
               <h1 className="mt-2 moei-h-section">Executive Dashboard</h1>
               <p className="mt-2 text-sm text-moei-body">
-                Real-time omnichannel KPIs · predictive analytics · workforce planning · live citizen activity
+                Live operational data from cases, calls, feedback, notifications, and activity events.
+              </p>
+              <p className="mt-1 text-xs text-moei-muted">
+                Refreshes every 5 seconds. Forecasts and risk scores are derived from live history, not fixed dashboard values.
               </p>
             </div>
-            <div className="flex items-center gap-2 rounded-sm border border-moei-bronze/40 bg-moei-cream px-3 py-1.5">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-moei-bronze" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-moei-bronze">
-                Live · SSE connected
+            <div className="flex flex-col items-end gap-1 rounded-sm border border-moei-bronze/40 bg-moei-cream px-3 py-2">
+              <div className="flex items-center gap-2">
+                <span className={"h-1.5 w-1.5 rounded-full " + (liveStatus === "connected" ? "animate-pulse bg-emerald-600" : liveStatus === "reconnecting" ? "animate-pulse bg-amber-500" : "bg-slate-400")} />
+                <span className="text-xs font-semibold uppercase tracking-wider text-moei-bronze">
+                  {liveStatus === "connected" ? "Live stream connected" : liveStatus === "reconnecting" ? "Live stream reconnecting" : liveStatus === "connecting" ? "Connecting live stream" : "Live stream offline"}
+                </span>
+              </div>
+              <span className="text-[10px] text-moei-muted">
+                Last refresh: {lastUpdated ? lastUpdated.toLocaleTimeString("en-GB") : "loading..."}
               </span>
             </div>
           </div>
@@ -165,6 +201,16 @@ export default function ExecPage() {
       <section className="mx-auto max-w-7xl px-6 py-8">
         {/* ===== AI Leadership Advisor ===== */}
         <AdvisorBox />
+
+        <DataFreshnessPanel
+          stats={stats}
+          voice={voice}
+          feedback={feedback}
+          activityCount={activity.length}
+          sourceErrors={sourceErrors}
+          lastUpdated={lastUpdated}
+          liveStatus={liveStatus}
+        />
 
         {/* ===== Brief-mandated operational KPIs ===== */}
         <OperationalKpiRow op={opKpis} feedback={feedback} />
@@ -233,6 +279,87 @@ export default function ExecPage() {
 }
 
 // ---- Components ----------------------------------------------------------
+
+function DataFreshnessPanel({
+  stats,
+  voice,
+  feedback,
+  activityCount,
+  sourceErrors,
+  lastUpdated,
+  liveStatus,
+}: {
+  stats: CrmStats | null;
+  voice: VoiceStats | null;
+  feedback: Feedback | null;
+  activityCount: number;
+  sourceErrors: Record<string, string>;
+  lastUpdated: Date | null;
+  liveStatus: LiveStatus;
+}) {
+  const errorEntries = Object.entries(sourceErrors);
+  const weekCases = Number(stats?.totals?.week ?? 0);
+  const openCases = Number(stats?.totals?.open ?? 0);
+  return (
+    <div className="mt-4 rounded-sm border border-moei-line bg-white p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-moei-ink">
+            Data Source Status
+          </div>
+          <p className="mt-1 text-xs text-moei-muted">
+            Live database reads with a 5s refresh. Activity is pushed by SSE and also backfilled from `/activity`.
+          </p>
+        </div>
+        <div className="text-xs text-moei-muted">
+          Last updated {lastUpdated ? lastUpdated.toLocaleTimeString("en-GB") : "loading..."}
+        </div>
+      </div>
+      <div className="mt-3 grid gap-2 md:grid-cols-4">
+        <SourceBadge
+          label="Cases database"
+          value={`${weekCases} cases / 7d · ${openCases} open`}
+          ok={!sourceErrors.Cases}
+        />
+        <SourceBadge
+          label="Voice recordings"
+          value={`${voice?.total ?? 0} calls · ${voice?.today ?? 0} today`}
+          ok={!sourceErrors.Voice}
+        />
+        <SourceBadge
+          label="Feedback"
+          value={`${feedback?.totals.responses_30d ?? 0} responses / 30d`}
+          ok={!sourceErrors.Feedback}
+        />
+        <SourceBadge
+          label="Activity stream"
+          value={`${activityCount} recent events · ${liveStatus}`}
+          ok={liveStatus === "connected" && !sourceErrors.Activity}
+        />
+      </div>
+      <div className="mt-3 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+        Forecasts, risk scoring, staffing recommendations, CSAT proxy, and advisor answers are derived from live records. They are not official MOEI production KPIs until connected to production systems.
+      </div>
+      {errorEntries.length > 0 && (
+        <div className="mt-3 rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-800">
+          Unavailable sources: {errorEntries.map(([k, v]) => `${k} (${v})`).join(", ")}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SourceBadge({ label, value, ok }: { label: string; value: string; ok: boolean }) {
+  return (
+    <div className={"rounded-sm border px-3 py-2 " + (ok ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50")}>
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-moei-muted">
+        <span className={"h-1.5 w-1.5 rounded-full " + (ok ? "bg-emerald-600" : "bg-amber-500")} />
+        {label}
+      </div>
+      <div className="mt-1 text-xs font-semibold text-moei-ink">{value}</div>
+    </div>
+  );
+}
 
 function Card({
   title, icon, span, className = "", children,

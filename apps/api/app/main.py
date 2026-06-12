@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from .routes import (
     admin_auth,
     analytics,
     auth,
+    automation,
     cases,
     chat,
     copilot,
@@ -28,10 +30,12 @@ from .routes import (
     exec_dashboard,
     feedback,
     health,
+    intel,
     mock_uaepass,
     notifications,
     recordings,
     search,
+    szhp,
     voice,
     whatsapp,
 )
@@ -81,6 +85,7 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(admin_auth.router)
 app.include_router(mock_uaepass.router)
+app.include_router(automation.router)
 app.include_router(chat.router)
 app.include_router(voice.router)
 app.include_router(whatsapp.router)
@@ -89,6 +94,8 @@ app.include_router(exec_dashboard.router)
 # v2 endpoints for omnichannel CRM + proactive engagement + analytics + live activity
 app.include_router(crm.router)
 app.include_router(cases.router)
+app.include_router(szhp.router)
+app.include_router(intel.router)
 app.include_router(notifications.router)
 app.include_router(recordings.router)
 app.include_router(documents.router)

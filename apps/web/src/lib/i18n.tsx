@@ -12,18 +12,10 @@
  */
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { LOCALE_COOKIE, Lang, dirFor } from "@/lib/i18n-core";
 
-export type Lang = "en" | "ar";
-export const LOCALE_COOKIE = "NEXT_LOCALE";
-
-export function dirFor(lang: Lang): "ltr" | "rtl" {
-  return lang === "ar" ? "rtl" : "ltr";
-}
-
-/** Normalise an arbitrary cookie/string value to a supported language (defaults to English). */
-export function normalizeLang(value: string | undefined | null): Lang {
-  return value === "ar" ? "ar" : "en";
-}
+export { LOCALE_COOKIE, dirFor, normalizeLang } from "@/lib/i18n-core";
+export type { Lang } from "@/lib/i18n-core";
 
 type LangContextValue = {
   lang: Lang;

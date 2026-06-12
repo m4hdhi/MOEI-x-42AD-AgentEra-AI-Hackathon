@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Body, HTTPException
+from loguru import logger
 
 from ..core.db import db_cursor
 
@@ -30,7 +32,7 @@ def _ser(row: dict) -> dict:
 
 
 @router.post("/{case_number}/trigger-update")
-def trigger_update(case_number: str, payload: dict = Body(...)) -> dict:
+def trigger_update(case_number: str, payload: Annotated[dict, Body(...)]) -> dict:
     """Send a proactive status update to the citizen who owns this case.
 
     Body: {"message": "Your maintenance request has been assigned — field visit Thursday"}
@@ -67,8 +69,8 @@ def trigger_update(case_number: str, payload: dict = Body(...)) -> dict:
             pref = cur.fetchone()
             if pref and pref.get("preferred_channel"):
                 channel = pref["preferred_channel"]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"preferred channel lookup failed for {case_number}: {e}")
 
         # Record as an already-sent proactive notification (immediate push).
         cur.execute(

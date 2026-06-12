@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" role="img" aria-label="Housing handover ceremony">
+  <defs>
+    <linearGradient id="wall" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#efe1c5"/>
+      <stop offset="1" stop-color="#d2bc92"/>
+    </linearGradient>
+    <linearGradient id="robe" x1="0" x2="1">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#e9e7e2"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="680" fill="url(#wall)"/>
+  <rect x="0" y="486" width="1200" height="194" fill="#b89969"/>
+  <rect x="76" y="484" width="1050" height="26" fill="#8b6a3e" opacity=".55"/>
+  <g opacity=".92">
+    <rect x="198" y="38" width="180" height="190" rx="8" fill="#7d5437"/>
+    <rect x="216" y="56" width="144" height="154" fill="#ddcfb5"/>
+    <circle cx="288" cy="124" r="42" fill="#d8b189"/>
+    <path d="M230 210c18-52 96-52 116 0z" fill="#f8f8f5"/>
+    <rect x="510" y="38" width="180" height="190" rx="8" fill="#7d5437"/>
+    <rect x="528" y="56" width="144" height="154" fill="#ddcfb5"/>
+    <circle cx="600" cy="124" r="42" fill="#d8b189"/>
+    <path d="M542 210c18-52 96-52 116 0z" fill="#f8f8f5"/>
+    <rect x="822" y="38" width="180" height="190" rx="8" fill="#7d5437"/>
+    <rect x="840" y="56" width="144" height="154" fill="#ddcfb5"/>
+    <circle cx="912" cy="124" r="42" fill="#d8b189"/>
+    <path d="M854 210c18-52 96-52 116 0z" fill="#f8f8f5"/>
+  </g>
+  <g transform="translate(94 210)">
+    <g transform="translate(0 45)">
+      <ellipse cx="90" cy="66" rx="56" ry="62" fill="#d2a77e"/>
+      <path d="M26 82c8-74 122-74 130 0l-18 18H44z" fill="#fff"/>
+      <rect x="22" y="120" width="138" height="300" rx="36" fill="url(#robe)"/>
+      <path d="M34 126c18 58 28 145 12 294" stroke="#d7d2c6" stroke-width="5" fill="none"/>
+      <rect x="38" y="72" width="104" height="16" rx="8" fill="#171717"/>
+    </g>
+    <g transform="translate(220 0)">
+      <ellipse cx="100" cy="75" rx="58" ry="64" fill="#c99b76"/>
+      <path d="M33 94c8-82 126-82 134 0l-18 20H51z" fill="#fff"/>
+      <rect x="28" y="132" width="148" height="334" rx="38" fill="url(#robe)"/>
+      <rect x="42" y="82" width="116" height="16" rx="8" fill="#171717"/>
+      <rect x="104" y="168" width="16" height="12" fill="#e43836"/>
+      <rect x="120" y="168" width="16" height="12" fill="#1b8057"/>
+    </g>
+    <g transform="translate(476 32)">
+      <ellipse cx="96" cy="72" rx="56" ry="60" fill="#c2936d"/>
+      <path d="M31 90c8-78 122-78 130 0l-18 19H49z" fill="#fff"/>
+      <rect x="24" y="126" width="146" height="324" rx="38" fill="url(#robe)"/>
+      <rect x="42" y="80" width="108" height="16" rx="8" fill="#171717"/>
+      <rect x="64" y="178" width="138" height="88" rx="8" fill="#f7f3e8" stroke="#b9975b" stroke-width="5"/>
+      <rect x="84" y="196" width="54" height="34" fill="#9dc7d8"/>
+      <path d="M148 207h38M148 224h30M84 246h102" stroke="#9d8758" stroke-width="5"/>
+    </g>
+    <g transform="translate(720 56)">
+      <ellipse cx="84" cy="64" rx="53" ry="58" fill="#b88363"/>
+      <path d="M21 80c8-70 118-70 126 0l-19 20H39z" fill="#f8f8f4"/>
+      <rect x="18" y="118" width="136" height="314" rx="36" fill="url(#robe)"/>
+      <rect x="36" y="68" width="98" height="16" rx="8" fill="#171717"/>
+      <path d="M46 210h80" stroke="#b9975b" stroke-width="8"/>
+    </g>
+    <g transform="translate(922 34)">
+      <ellipse cx="80" cy="68" rx="54" ry="60" fill="#c0936e"/>
+      <path d="M18 86c8-75 116-75 124 0l-16 18H34z" fill="#fff"/>
+      <rect x="18" y="124" width="134" height="326" rx="36" fill="url(#robe)"/>
+      <rect x="34" y="74" width="100" height="16" rx="8" fill="#171717"/>
+    </g>
+  </g>
+  <g fill="#3c2f26" opacity=".2">
+    <ellipse cx="186" cy="646" rx="92" ry="14"/>
+    <ellipse cx="414" cy="646" rx="98" ry="14"/>
+    <ellipse cx="668" cy="646" rx="116" ry="16"/>
+    <ellipse cx="902" cy="646" rx="88" ry="14"/>
+    <ellipse cx="1112" cy="646" rx="86" ry="14"/>
+  </g>
+</svg>

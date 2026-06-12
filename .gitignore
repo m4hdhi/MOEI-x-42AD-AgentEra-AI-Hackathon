@@ -14,6 +14,7 @@ env/
 
 # Node
 node_modules/
+.pnpm-store/
 .next/
 out/
 .turbo/
@@ -34,11 +35,13 @@ build/
 .idea/
 .DS_Store
 Thumbs.db
+.playwright-cli/
 
 # Data / models / caches
 data/raw/
 data/processed/
 data/models/
+storage/
 *.gguf
 *.bin
 *.safetensors
@@ -70,3 +73,6 @@ Claude.pdf
 
 # Stray root-level dataset downloads (the clean copy lives in data/moei/)
 /*.xlsx
+
+# Stray root-level docs
+/*.docx

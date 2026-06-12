@@ -11,6 +11,7 @@
  * a phone call so the demo flows cleanly.
  */
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Phone, PhoneOff, Mic, Volume2, AlertCircle } from "lucide-react";
 import { API_URL } from "@/lib/utils";
@@ -26,8 +27,14 @@ type CallState =
   | "thinking"
   | "speaking"
   | "saving";
+type VoiceLang = "auto" | "ar" | "en";
 
 type SpeechRec = any;
+
+function detectSpokenLanguage(text: string): "ar" | "en" {
+  const arabic = Array.from(text).filter((c) => /[\u0600-\u06ff\u0750-\u077f]/.test(c)).length;
+  return arabic / Math.max(text.length, 1) > 0.15 ? "ar" : "en";
+}
 
 export default function CallPage() {
   return (
@@ -55,6 +62,8 @@ function CallExperience({ session }: { session: UaePassSession }) {
   const [caseNumber, setCaseNumber] = useState<string | null>(null);
   const [sources, setSources] = useState<string[]>([]);
   const [sessionId] = useState(() => crypto.randomUUID());
+  const [voiceLang, setVoiceLang] = useState<VoiceLang>("auto");
+  const [detectedLang, setDetectedLang] = useState<"ar" | "en">("ar");
 
   const recogRef = useRef<SpeechRec | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -88,6 +97,20 @@ function CallExperience({ session }: { session: UaePassSession }) {
       .catch(() => setUsingEleven(false));
   }, []);
 
+  const preferredListenLang = () => {
+    if (voiceLang === "ar") return "ar-AE";
+    if (voiceLang === "en") return "en-US";
+    // Browser STT cannot truly auto-detect languages. In auto mode we start with Arabic
+    // for the UAE demo, then follow the language detected from each completed turn.
+    return detectedLang === "ar" ? "ar-AE" : "en-US";
+  };
+
+  const preferredReplyLang = () => {
+    if (voiceLang === "ar") return "ar";
+    if (voiceLang === "en") return "en";
+    return detectedLang;
+  };
+
   // Init browser STT once
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -101,7 +124,7 @@ function CallExperience({ session }: { session: UaePassSession }) {
     const r = new SR();
     r.continuous = false;
     r.interimResults = true;
-    r.lang = "en-US";
+    r.lang = preferredListenLang();
     r.onresult = (e: any) => {
       let final = "";
       let inter = "";
@@ -112,7 +135,10 @@ function CallExperience({ session }: { session: UaePassSession }) {
       }
       setInterim(inter);
       if (final.trim()) {
-        handleCitizenSpeech(final.trim());
+        const clean = final.trim();
+        const spokenLang = detectSpokenLanguage(clean);
+        setDetectedLang(spokenLang);
+        handleCitizenSpeech(clean, spokenLang);
         setInterim("");
       }
     };
@@ -124,6 +150,7 @@ function CallExperience({ session }: { session: UaePassSession }) {
       if (stateRef.current === "listening") {
         // Restart STT loop if we're still expecting the citizen to talk
         try {
+          r.lang = preferredListenLang();
           r.start();
         } catch {}
       }
@@ -134,7 +161,7 @@ function CallExperience({ session }: { session: UaePassSession }) {
         r.stop();
       } catch {}
     };
-  }, []);
+  }, [voiceLang, detectedLang]);
 
   async function startCall() {
     if (state !== "idle") return;
@@ -145,6 +172,8 @@ function CallExperience({ session }: { session: UaePassSession }) {
     setTone(null);
     setCaseNumber(null);
     setSources([]);
+    const callLang = voiceLang === "en" ? "en" : "ar";
+    setDetectedLang(callLang);
     setState("ringing");
 
     // Request the mic and start recording the call audio.
@@ -173,9 +202,12 @@ function CallExperience({ session }: { session: UaePassSession }) {
     callStartRef.current = Date.now();
     setTimeout(() => {
       setState("connected");
+      const openerLang = voiceLang === "en" ? "en" : callLang;
       const opener =
-        "Hello, you've reached the Ministry of Energy and Infrastructure. How can I help you today?";
-      speak(opener, "en");
+        openerLang === "ar"
+          ? "مرحباً، وصلت إلى المساعد الذكي لوزارة الطاقة والبنية التحتية. كيف يمكنني مساعدتك اليوم؟"
+          : "Hello, you've reached the Ministry of Energy and Infrastructure. How can I help you today?";
+      speak(opener, openerLang);
       setTranscript([{ role: "agent", text: opener, t: 0 }]);
       timerRef.current = window.setInterval(
         () => setDuration((d) => d + 1),
@@ -247,7 +279,7 @@ function CallExperience({ session }: { session: UaePassSession }) {
     try {
       const fd = new FormData();
       fd.append("call_id", sessionId);
-      fd.append("language", "en");
+      fd.append("language", detectedLang);
       fd.append("user_id", callerId);
       fd.append("user_name", callerName);
       fd.append("duration_seconds", String(callDuration));
@@ -272,16 +304,20 @@ function CallExperience({ session }: { session: UaePassSession }) {
   function startListening() {
     const r = recogRef.current;
     if (!r) return;
+    setInterim("");
     setState("listening");
     try {
-      r.lang = "en-US";
+      r.lang = preferredListenLang();
       r.start();
     } catch {}
   }
 
-  async function handleCitizenSpeech(text: string) {
+  async function handleCitizenSpeech(text: string, spokenLang?: "ar" | "en") {
+    const turnLang = spokenLang || detectSpokenLanguage(text);
+    setDetectedLang(turnLang);
     setTranscript((t) => [...t, { role: "citizen", text, t: elapsed() }]);
     setState("thinking");
+
     try {
       recogRef.current?.stop();
     } catch {}
@@ -295,7 +331,7 @@ function CallExperience({ session }: { session: UaePassSession }) {
           user_id: callerId,
           channel: "voice",
           session_id: sessionId,
-          language: "auto",
+          language: turnLang,
           text,
         }),
       });
@@ -303,6 +339,7 @@ function CallExperience({ session }: { session: UaePassSession }) {
       const reply: string =
         data.text || "I didn't catch that, could you say it again?";
       const lang: string = data.language || "en";
+      if (lang === "ar" || lang === "en") setDetectedLang(lang);
       if (typeof data.sentiment === "number") setTone(data.sentiment);
       if (data.case_number) setCaseNumber(data.case_number);
       if (Array.isArray(data.citations) && data.citations.length) {
@@ -358,6 +395,13 @@ function CallExperience({ session }: { session: UaePassSession }) {
         }
         const u = new SpeechSynthesisUtterance(text);
         u.lang = language === "ar" ? "ar-AE" : "en-US";
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find((v) =>
+          language === "ar"
+            ? v.lang.toLowerCase().startsWith("ar")
+            : v.lang.toLowerCase().startsWith("en"),
+        );
+        if (preferredVoice) u.voice = preferredVoice;
         u.rate = 1.05;
         u.onend = () => resolve();
         u.onerror = () => resolve();
@@ -394,7 +438,10 @@ function CallExperience({ session }: { session: UaePassSession }) {
               MOEI Call Centre
             </h2>
             <p className="text-[11px] uppercase tracking-wider text-slate-400">
-              Customer Happiness Centre · 800 6634
+              Customer Happiness Centre ·{" "}
+              <Link href="/call" className="font-semibold text-moei-bronze hover:underline">
+                800 6634
+              </Link>
             </p>
 
             {/* Status */}
@@ -511,6 +558,34 @@ function CallExperience({ session }: { session: UaePassSession }) {
                 your case file.
               </div>
             )}
+          </div>
+
+          <div className="mt-5 flex items-center justify-center gap-1 rounded-full bg-slate-900/70 p-1 text-[11px] font-semibold">
+            {[
+              { value: "auto", label: "Auto" },
+              { value: "ar", label: "عربي" },
+              { value: "en", label: "English" },
+            ].map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => {
+                  const next = item.value as VoiceLang;
+                  setVoiceLang(next);
+                  setDetectedLang(next === "en" ? "en" : "ar");
+                  if (recogRef.current) recogRef.current.lang = next === "en" ? "en-US" : "ar-AE";
+                }}
+                disabled={state !== "idle" && state !== "connected"}
+                className={
+                  "rounded-full px-3 py-1.5 transition disabled:opacity-50 " +
+                  (voiceLang === item.value
+                    ? "bg-moei-bronze text-white"
+                    : "text-slate-300 hover:bg-slate-700")
+                }
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
 
           {/* Waveform / pulse */}

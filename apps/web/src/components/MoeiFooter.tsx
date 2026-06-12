@@ -19,7 +19,7 @@ export function MoeiFooter() {
             links={[
               ["Frequently asked questions", "#"],
               ["Sheikh Zayed Housing Programme", "https://www.moei.gov.ae"],
-              ["Customer Happiness Centre", "#"],
+              ["Customer Happiness Centre", "/call"],
               ["171 Tawasul", "#"],
             ]}
           />
@@ -42,7 +42,9 @@ export function MoeiFooter() {
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-moei-ink">
               Toll free
             </h4>
-            <p className="text-xl font-bold text-moei-bronze">800 6634</p>
+            <Link href="/call" className="text-xl font-bold text-moei-bronze hover:underline">
+              800 6634
+            </Link>
             <p className="mt-1 text-xs text-moei-muted">+971 (0) 9 718 0066 34</p>
             <p className="mt-4 text-[11px] text-moei-muted">
               Customer Happiness Centre, available 24 hours a day, 7 days a week.

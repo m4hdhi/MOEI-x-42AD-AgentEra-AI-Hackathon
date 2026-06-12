@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import os
-import random
+import secrets
 from collections.abc import Awaitable, Callable
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request, Response
@@ -38,8 +38,8 @@ def _synthetic_emirates_id() -> str:
 
     Format: 784-YYYY-NNNNNNN-C. Stamped to make obvious it's not real (year 9999).
     """
-    seq = random.randint(1_000_000, 9_999_999)
-    check = random.randint(0, 9)
+    seq = 1_000_000 + secrets.randbelow(9_000_000)
+    check = secrets.randbelow(10)
     return f"784-9999-{seq}-{check}"
 
 
@@ -52,7 +52,8 @@ def _resolve_identity(sender: str, profile_name: str | None) -> tuple[str, str |
     try:
         with db_cursor() as cur:
             cur.execute(
-                "SELECT user_id, display_name, is_demo_guest FROM whatsapp_identities WHERE wa_number = %s",
+                "SELECT user_id, display_name, is_demo_guest "
+                "FROM whatsapp_identities WHERE wa_number = %s",
                 (sender,),
             )
             row = cur.fetchone()
@@ -126,7 +127,8 @@ async def _process_and_reply(
         if is_new_guest:
             reply = (
                 "👋 Welcome to the Ministry of Energy and Infrastructure.\n"
-                "You can ask about housing, energy, transport, maritime, or infrastructure services in Arabic or English.\n\n"
+                "You can ask about housing, energy, transport, maritime, or infrastructure "
+                "services in Arabic or English.\n\n"
                 + reply
             )
         await send(sender, reply)

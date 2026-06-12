@@ -7,6 +7,21 @@ import { API_URL } from "@/lib/utils";
 
 type AdminUser = { email?: string; role?: string };
 
+function readDemoSession(): AdminUser | null {
+  try {
+    const raw = localStorage.getItem("agent42_admin_demo_session");
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data.expires_at || Date.now() > Number(data.expires_at)) {
+      localStorage.removeItem("agent42_admin_demo_session");
+      return null;
+    }
+    return { email: data.email, role: data.role };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Admin layout: renders an AdminHeader (dark/slate) on every /admin/* route
  * except /admin/login. Also enforces "must be signed in" by redirecting
@@ -26,6 +41,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (isLoginPage) {
+      setChecked(true);
+      return;
+    }
+    const demoSession = readDemoSession();
+    if (demoSession) {
+      setUser(demoSession);
       setChecked(true);
       return;
     }

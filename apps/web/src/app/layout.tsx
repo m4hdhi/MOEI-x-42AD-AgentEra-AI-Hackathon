@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import localFont from "next/font/local";
 import "./globals.css";
-import { LanguageProvider, LOCALE_COOKIE, dirFor, normalizeLang } from "@/lib/i18n";
+import { LOCALE_COOKIE, dirFor, normalizeLang } from "@/lib/i18n-core";
+import { LanguageProvider } from "@/lib/i18n";
 import { MoeiHeader } from "@/components/MoeiHeader";
 import { MoeiFooter } from "@/components/MoeiFooter";
 

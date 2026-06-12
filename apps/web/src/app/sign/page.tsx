@@ -16,6 +16,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   Send, Trash2, Volume2, Camera as CamIcon, RotateCcw, MessageCircle, Hand,
   Sparkles, SpellCheck, Hand as HandIcon, Keyboard,
@@ -75,7 +76,7 @@ const MODEL = "https://storage.googleapis.com/mediapipe-models/gesture_recognize
 const ESM = "https://esm.sh/@mediapipe/tasks-vision@0.10.18";
 
 type Mode = "gesture" | "word" | "spell";
-type ChatMsg = { role: "user" | "assistant"; text: string; time: string };
+type ChatMsg = { role: "user" | "assistant"; text: string; time: string; channel?: string };
 
 export default function SignPage() {
   return (
@@ -121,6 +122,21 @@ function SignExperience({ session }: { session: UaePassSession }) {
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  useEffect(() => {
+    fetch(`${API_URL}/chat/history?n=20`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        const turns: ChatMsg[] = (d.turns || []).map((t: any) => ({
+          role: t.role,
+          text: t.text,
+          channel: t.channel,
+          time: t.channel ? t.channel.toUpperCase() : "History",
+        }));
+        if (turns.length) setMessages(turns);
+      })
+      .catch(() => {});
+  }, []);
+
   // Silence MediaPipe's benign WASM INFO logs so Next's dev overlay doesn't flag them as errors.
   useEffect(() => {
     const orig = console.error;
@@ -147,7 +163,7 @@ function SignExperience({ session }: { session: UaePassSession }) {
         credentials: "include",
         body: JSON.stringify({
           user_id: session.emirates_id || "anonymous",
-          channel: "web", session_id: sessionId, language: lang, text: t,
+          channel: "sign", session_id: sessionId, language: lang, text: t,
         }),
       });
       const d = await r.json();
@@ -505,19 +521,24 @@ function SignExperience({ session }: { session: UaePassSession }) {
 
             {/* conversation */}
             <div className="rounded-2xl border border-moei-line bg-white p-4 flex flex-col">
-              <div className="flex items-center gap-2 mb-3 pb-3 border-b border-moei-line">
-                <MessageCircle size={16} className="text-moei-bronze" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-moei-muted">Conversation</span>
+              <div className="mb-3 flex items-center justify-between gap-2 border-b border-moei-line pb-3">
+                <div className="flex items-center gap-2">
+                  <MessageCircle size={16} className="text-moei-bronze" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-moei-muted">Conversation history</span>
+                </div>
+                <Link href="/chat" className="text-[11px] font-semibold text-moei-bronze hover:text-moei-ink">
+                  Open full chat
+                </Link>
               </div>
               <div className="space-y-3 max-h-[300px] overflow-y-auto">
                 {messages.length === 0 ? (
-                  <p className="text-xs text-moei-muted text-center py-6">Sign to start the conversation…</p>
+                  <p className="text-xs text-moei-muted text-center py-6">Sign or type to start the conversation…</p>
                 ) : messages.map((m, i) => (
                   <div key={i} className={`text-xs p-2.5 rounded-lg ${m.role === "user" ? "bg-moei-bronze/10 border border-moei-bronze/30 text-moei-ink" : "bg-emerald-50 border border-emerald-200 text-emerald-900"}`}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-semibold text-[10px]">{m.role === "user" ? "You" : "Assistant"}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-moei-muted">{m.time}</span>
+                        <span className="text-[9px] uppercase text-moei-muted">{m.channel ?? m.time}</span>
                         {m.role === "assistant" && (
                           <button onClick={() => speak(m.text, language)} className="text-emerald-700 hover:text-emerald-900" aria-label="Read aloud"><Volume2 size={12} /></button>
                         )}

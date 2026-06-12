@@ -32,12 +32,12 @@ _SYNTHETIC = {
     ),
     "784-1990-1181000-4": UaePassProfile(
         emirates_id="784-1990-1181000-4",
-        full_name_en="Fatima Al Mansouri",
-        full_name_ar="فاطمة المنصوري",
+        full_name_en="Mariam Al Mansouri",
+        full_name_ar="مريم المنصوري",
         nationality="UAE",
         date_of_birth="1990-11-18",
         mobile="+971530843221",
-        email="fatima.almansouri@example.ae",
+        email="mariam.almansouri@example.ae",
     ),
 }
 

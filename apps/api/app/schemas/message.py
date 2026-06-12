@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-Channel = Literal["web", "voice", "whatsapp", "mobile"]
+Channel = Literal["web", "voice", "whatsapp", "mobile", "sign"]
 Language = Literal["ar", "en", "auto"]
 
 
